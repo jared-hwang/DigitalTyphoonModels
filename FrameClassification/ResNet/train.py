@@ -11,9 +11,14 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--dataroot', required=True, type=str, help='path to the root data directory')
+parser.add_argument('--loaddata', default=False, type=bool, help='path to the root data directory')
 args = parser.parse_args()
 dataroot = Path(args.dataroot)
 data_path = dataroot
+if args.loaddata:
+    load_data = 'all_data'
+else:
+    load_data = False
 
 # data_path = Path.home() / 'data'
 images_path = str(data_path / 'image') + '/'
@@ -39,6 +44,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=
 dataset = DigitalTyphoonDataset(str(images_path),
                                 str(track_path),
                                 str(metadata_path),
+                                load_data_into_memory=load_data,
                                 verbose=False)
 
 # Open the dataset
