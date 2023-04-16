@@ -7,14 +7,18 @@ from train_utils import train, validate
 from model import ResidualBlock, ResNet
 from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
 
-data_path = Path.home() / 'data'
+import argparse
+
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('--dataroot', required=True, type=str, help='path to the root data directory')
+args = parser.parse_args()
+dataroot = Path(args.dataroot)
+data_path = dataroot
+
+# data_path = Path.home() / 'data'
 images_path = str(data_path / 'image') + '/'
 track_path = str(data_path / 'track') + '/'
 metadata_path = str(data_path / 'metadata.json')
-print(images_path)
-print(track_path)
-print(metadata_path)
-
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 SEED = 83
@@ -29,7 +33,7 @@ model = ResNet(ResidualBlock, [3, 4, 6, 3]).to(device)
 
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay = 0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.001)
 
 # Open the dataset
 dataset = DigitalTyphoonDataset(str(images_path),
