@@ -59,6 +59,6 @@ train_indices = train_set.indices
 train(model, dataset, train_set, optimizer, criterion, num_epochs, batch_size, device)
 validate(model, dataset, test_set, criterion, device)
 
-torch.save(model.state_dict(), f'saved_models/resnet_{datetime.datetime.now().strftime("%d/%m/%Y-%H.%M.%S")}')
+torch.save(model.state_dict(), f'saved_models/resnet_{datetime.datetime.now().strftime("%Y_%m_%d-%H.%M.%S")}')
 
 

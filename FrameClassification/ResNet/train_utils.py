@@ -49,6 +49,13 @@ def train(model, dataset, train_indices, optimizer, criterion,
         print(f"\t Loss: {epoch_loss}")
         print(f"\t Accuracy: {epoch_acc}%")
 
+        # Checkpoint
+        torch.save({
+            'epoch': epoch+1,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+        }, f'model_checkpoint_epoch{epoch+1}.pt')
+
 
 # # Validation function.
 def validate(model, dataset, testloader, criterion, device):
@@ -57,6 +64,9 @@ def validate(model, dataset, testloader, criterion, device):
     valid_running_loss = 0.0
     valid_running_correct = 0
     counter = 0
+    true_pos = 0
+    false_pos = 0
+    false_neg = 0
     with torch.no_grad():
         for i, data in tqdm(enumerate(testloader), total=len(testloader)):
             counter += 1
@@ -74,6 +84,8 @@ def validate(model, dataset, testloader, criterion, device):
             # Calculate the accuracy.
             _, preds = torch.max(outputs.data, 1)
             valid_running_correct += (preds == label).sum().item()
+            # true_pos += (preds == label).sum().item()
+
 
     # Loss and accuracy for the complete epoch.
     epoch_loss = valid_running_loss
