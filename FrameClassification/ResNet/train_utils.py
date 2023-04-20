@@ -2,8 +2,11 @@ import torch
 from torch import nn
 from torch import optim
 import torch.nn.functional as F
+import numpy as np
+import pandas as pd
 from tqdm import tqdm
-from sklearn.metrics import f1_score
+import matplotlib.pyplot as plt
+from sklearn.metrics import f1_score, confusion_matrix
 from torchvision import datasets, transforms, models
 
 
@@ -93,10 +96,21 @@ def validate(model, dataset, testloader, criterion, device):
     epoch_loss = valid_running_loss
     epoch_acc = 100. * (valid_running_correct / len(dataset))
     f1_result = f1_score(predicted_labels, truth_labels, average='weighted')
+
+    num_classes = 9
+    # Build confusion matrix
+    cf_matrix = confusion_matrix(truth_labels, predicted_labels)
+    df_cm = pd.DataFrame(cf_matrix / np.sum(cf_matrix, axis=1)[:, None], index=[i for i in range(num_classes)],
+                         columns=[i for i in range(num_classes)])
+    plt.figure(figsize=(12, 7))
+    sn.heatmap(df_cm, annot=True)
+    plt.savefig('validation_confusion_matrix.png')
+
     print(f"\t Loss: {epoch_loss}")
     print(f"\t Accuracy: {epoch_acc}%")
     print(f"\t Weighted average F1 Score: {f1_result}%")
     return epoch_loss, epoch_acc, f1_result
+
 
 # def validate(model, dataset, test_indices, device):
 #     # evaluate trained model with test set
