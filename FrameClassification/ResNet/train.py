@@ -1,4 +1,6 @@
 import datetime
+import os
+
 import torch
 import torch.nn as nn
 from pathlib import Path
@@ -11,10 +13,12 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--dataroot', required=True, type=str, help='path to the root data directory')
+parser.add_argument('--savepath', required=True, type=str, help='path to the directory to save the models and logs')
 parser.add_argument('--loaddata', default=False, type=bool, help='path to the root data directory')
 args = parser.parse_args()
 dataroot = Path(args.dataroot)
 data_path = dataroot
+save_path = Path(args.savepath)
 if args.loaddata:
     load_data = 'all_data'
 else:
@@ -31,8 +35,8 @@ torch.manual_seed(SEED)
 
 # Create the model
 num_classes = 7
-num_epochs = 10
-batch_size = 16
+num_epochs = 4
+batch_size = 32
 learning_rate = 0.01
 model = ResNet(ResidualBlock, [3, 4, 6, 3]).to(device)
 
@@ -56,9 +60,16 @@ dataset = DigitalTyphoonDataset(str(images_path),
 train_set, test_set = dataset.random_split([0.8, 0.2], split_by='frame')
 train_indices = train_set.indices
 
-train(model, dataset, train_set, optimizer, criterion, num_epochs, batch_size, device)
-validate(model, dataset, test_set, criterion, device)
+train_log_string = train(model, dataset, train_set, optimizer, criterion, num_epochs, batch_size, device, save_path)
+val_loss, val_acc, val_f1_result = validate(model, dataset, test_set, criterion, device)
+train_log_string += f"Validation: \n \t loss: {val_loss} \n \t acc: {val_acc} \n \t val_f1: {val_f1_result}"
 
-torch.save(model.state_dict(), f'saved_models/resnet_{datetime.datetime.now().strftime("%Y_%m_%d-%H.%M.%S")}')
+curr_time_str = str(datetime.datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
+torch.save(model.state_dict(), str(save_path / 'saved_models' / f'resnet_weights_{curr_time_str}'))
+
+with open(str(save_path / 'logs' / f'resnet_log_{curr_time_str}'), 'w') as writer:
+    writer.write(train_log_string)
+
+
 
 

@@ -3,15 +3,16 @@ from torch import nn
 from torch import optim
 import torch.nn.functional as F
 from tqdm import tqdm
+from sklearn.metrics import f1_score
 from torchvision import datasets, transforms, models
 
 
 def train(model, dataset, train_indices, optimizer, criterion,
-          epochs, batch_size, device):
+          epochs, batch_size, device, savepath):
     batches_per_epoch = len(train_indices) // batch_size
-
+    log_string = ''
     for epoch in range(epochs):
-        print(f"Epoch: {epoch}")
+        print(f"Epoch: {epoch+1}")
         train_running_loss = 0.0
         train_running_correct = 0
         total = 0
@@ -48,25 +49,25 @@ def train(model, dataset, train_indices, optimizer, criterion,
         epoch_acc = 100. * (train_running_correct / len(dataset))
         print(f"\t Loss: {epoch_loss}")
         print(f"\t Accuracy: {epoch_acc}%")
+        log_string += f"Epoch {epoch+1} \n \t loss: {epoch_loss} \n \t acc: {epoch_acc} \n"
 
         # Checkpoint
         torch.save({
             'epoch': epoch+1,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
-        }, f'model_checkpoint_epoch{epoch+1}.pt')
-
+        }, str(savepath / 'saved_models' / f'model_checkpoint_epoch{epoch+1}.pt'))
+    return log_string
 
 # # Validation function.
 def validate(model, dataset, testloader, criterion, device):
     model.eval()
     print('Validation')
+    predicted_labels = []
+    truth_labels = []
     valid_running_loss = 0.0
     valid_running_correct = 0
     counter = 0
-    true_pos = 0
-    false_pos = 0
-    false_neg = 0
     with torch.no_grad():
         for i, data in tqdm(enumerate(testloader), total=len(testloader)):
             counter += 1
@@ -77,6 +78,9 @@ def validate(model, dataset, testloader, criterion, device):
             # Forward pass.
             outputs = model(image)
 
+            truth_labels.append(label[0])
+            predicted_labels.append(outputs[0])
+
             # Calculate the loss.
             loss = criterion(outputs, label)
             valid_running_loss += loss.item()
@@ -84,14 +88,15 @@ def validate(model, dataset, testloader, criterion, device):
             # Calculate the accuracy.
             _, preds = torch.max(outputs.data, 1)
             valid_running_correct += (preds == label).sum().item()
-            # true_pos += (preds == label).sum().item()
-
 
     # Loss and accuracy for the complete epoch.
     epoch_loss = valid_running_loss
     epoch_acc = 100. * (valid_running_correct / len(dataset))
+    f1_result = f1_score(predicted_labels, truth_labels, average='weighted')
     print(f"\t Loss: {epoch_loss}")
     print(f"\t Accuracy: {epoch_acc}%")
+    print(f"\t Weighted average F1 Score: {f1_result}%")
+    return epoch_loss, epoch_acc, f1_result
 
 # def validate(model, dataset, test_indices, device):
 #     # evaluate trained model with test set
