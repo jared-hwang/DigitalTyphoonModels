@@ -1,0 +1,5 @@
+# Model weights and data
+*.pt
+*.h5
+*.csv
+*.png
