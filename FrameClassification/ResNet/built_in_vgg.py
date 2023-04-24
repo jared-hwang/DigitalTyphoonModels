@@ -35,11 +35,18 @@ torch.manual_seed(SEED)
 
 # Create the model
 num_classes = 7
-num_epochs = 3
+num_epochs = 4
 batch_size = 16
 learning_rate = 0.01
-model = ResNet(ResidualBlock, [3, 4, 6, 3]).to(device)
 
+model = torch.hub.load('pytorch/vision:v0.10.0', 'vgg16', pretrained=True)
+model.features[0] = nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+model.classifier[6] = nn.Linear(in_features=4096, out_features=10, bias=True)
+
+#model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=False)
+#model.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+#model.fc = nn.Linear(in_features=512, out_features=10, bias=True)
+model = model.to(device)
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.001)
@@ -65,10 +72,11 @@ val_loss, val_acc, val_f1_result = validate(model, dataset, test_set, criterion,
 train_log_string += f"Validation: \n \t loss: {val_loss} \n \t acc: {val_acc} \n \t val_f1: {val_f1_result}"
 
 curr_time_str = str(datetime.datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
-torch.save(model.state_dict(), str(save_path / 'saved_models' / f'resnet_weights_{curr_time_str}'))
+torch.save(model.state_dict(), str(save_path / 'saved_models' / f'built_in_resnet_weights_{curr_time_str}'))
 
-with open(str(save_path / 'logs' / f'resnet_log_{curr_time_str}'), 'w') as writer:
+with open(str(save_path / 'logs' / f'built_in_resnet_log_{curr_time_str}'), 'w') as writer:
     writer.write(train_log_string)
+
 
 
 

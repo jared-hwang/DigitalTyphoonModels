@@ -1,4 +1,5 @@
 import torch
+import datetime
 from torch import nn
 from torch import optim
 import torch.nn.functional as F
@@ -6,7 +7,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from sklearn.metrics import f1_score, confusion_matrix
+import seaborn as sn
+from sklearn.metrics import f1_score, confusion_matrix, accuracy_score
 from torchvision import datasets, transforms, models
 
 
@@ -19,7 +21,9 @@ def train(model, dataset, train_indices, optimizer, criterion,
         train_running_loss = 0.0
         train_running_correct = 0
         total = 0
-        # for i in range(batches_per_epoch):
+       
+        model.train()
+	# for i in range(batches_per_epoch):
         for i in tqdm(range(batches_per_epoch), total=batches_per_epoch):
             start = i * batch_size
             batch_indices = train_indices.indices[start:start + batch_size]
@@ -29,6 +33,7 @@ def train(model, dataset, train_indices, optimizer, criterion,
             Xbatch = torch.reshape(Xbatch, [batch_size, 1, 512, 512]).to(device)
             ybatch = dataset.labels_as_tensor(batch_indices, 'grade').long().to(device)
 
+            optimizer.zero_grad()
             # forward pass
             y_pred = model(Xbatch)
 
@@ -42,15 +47,14 @@ def train(model, dataset, train_indices, optimizer, criterion,
             train_running_correct += (predicted == ybatch).sum().item()
 
             # backward pass
-            optimizer.zero_grad()
             loss.backward()
             # update weights
             optimizer.step()
 
         # Loss and accuracy for the complete epoch.
-        epoch_loss = train_running_loss / (epoch + 1)
-        epoch_acc = 100. * (train_running_correct / len(dataset))
-        print(f"\t Loss: {epoch_loss}")
+        epoch_loss = train_running_loss / (batches_per_epoch)
+        epoch_acc = 100. * (train_running_correct / len(train_indices))
+        print(f"\t Avg batch Loss: {epoch_loss}")
         print(f"\t Accuracy: {epoch_acc}%")
         log_string += f"Epoch {epoch+1} \n \t loss: {epoch_loss} \n \t acc: {epoch_acc} \n"
 
@@ -63,7 +67,7 @@ def train(model, dataset, train_indices, optimizer, criterion,
     return log_string
 
 # # Validation function.
-def validate(model, dataset, testloader, criterion, device):
+def validate(model, dataset, testloader, criterion, device, savepath):
     model.eval()
     print('Validation')
     predicted_labels = []
@@ -81,8 +85,10 @@ def validate(model, dataset, testloader, criterion, device):
             # Forward pass.
             outputs = model(image)
 
-            truth_labels.append(label[0])
-            predicted_labels.append(outputs[0])
+            
+            truth_labels.append(float(label[0].to('cpu')))
+            predicted_label = torch.argmax(outputs).to('cpu')
+            predicted_labels.append(float(predicted_label))
 
             # Calculate the loss.
             loss = criterion(outputs, label)
@@ -92,23 +98,36 @@ def validate(model, dataset, testloader, criterion, device):
             _, preds = torch.max(outputs.data, 1)
             valid_running_correct += (preds == label).sum().item()
 
+    
     # Loss and accuracy for the complete epoch.
     epoch_loss = valid_running_loss
-    epoch_acc = 100. * (valid_running_correct / len(dataset))
-    f1_result = f1_score(predicted_labels, truth_labels, average='weighted')
+    epoch_acc = 100. * (valid_running_correct / len(testloader))
+    f1_result = f1_score(truth_labels, predicted_labels, average='weighted')
+    accuracy = 100*accuracy_score(truth_labels, predicted_labels)
+    print(f'epoch acc: {epoch_acc}, sklearn acc: {accuracy}')
+    epoch_acc = accuracy
 
-    num_classes = 9
+    num_classes = 6
     # Build confusion matrix
     cf_matrix = confusion_matrix(truth_labels, predicted_labels)
+    df_cm = pd.DataFrame(cf_matrix, index=[i for i in range(num_classes)],
+                         columns=[i for i in range(num_classes)])    
+     
+    curr_time_str = str(datetime.datetime.now().strftime("%d_%m_%Y-%H.%M.%S"))
+    plt.figure(figsize=(12, 7))
+    sn.heatmap(df_cm, annot=True, fmt='g')
+    plt.savefig(str(savepath / 'logs' / f'resnet_confusion_matrix_{curr_time_str}.png'))
+    
+    #normalize confusion mat
+    plt.clf()
     df_cm = pd.DataFrame(cf_matrix / np.sum(cf_matrix, axis=1)[:, None], index=[i for i in range(num_classes)],
                          columns=[i for i in range(num_classes)])
-    plt.figure(figsize=(12, 7))
-    sn.heatmap(df_cm, annot=True)
-    plt.savefig('validation_confusion_matrix.png')
+    sn.heatmap(df_cm, annot=True, fmt='g')
+    plt.savefig(str(savepath / 'logs' / f'resnet_confusion_matrix_norm_{curr_time_str}.png'))
 
     print(f"\t Loss: {epoch_loss}")
     print(f"\t Accuracy: {epoch_acc}%")
-    print(f"\t Weighted average F1 Score: {f1_result}%")
+    print(f"\t Weighted average F1 Score: {f1_result}")
     return epoch_loss, epoch_acc, f1_result
 
 
@@ -189,3 +208,4 @@ def validate(model, dataset, testloader, criterion, device):
 #     epoch_loss = valid_running_loss / counter
 #     epoch_acc = 100. * (valid_running_correct / len(testloader.dataset))
 #     return epoch_loss, epoch_acc
+
