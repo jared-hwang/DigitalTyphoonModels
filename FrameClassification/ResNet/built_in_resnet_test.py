@@ -70,7 +70,7 @@ if use_small:
 else:
     train_set, test_set = dataset.random_split([0.8, 0.2], split_by=args.split_by)
 
-trainloader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
+trainloader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=8)
 
 train_log_string = f'Start time: {start_time_str} \n' \
                    f'Num epochs: {num_epochs} \n' \
