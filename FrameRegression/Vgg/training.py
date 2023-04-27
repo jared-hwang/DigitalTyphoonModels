@@ -3,9 +3,8 @@ from testing import *
 import numpy as np
 import copy
 
-def training(device,model,loss_fn,optimizer,train_data,validation_data,batch_size,epochs):
+def training(device,model,loss_fn,optimizer,trainloader,testloader,batch_size,epochs):
     t=1
-    n_train = 5000 #len(train_data)
     best_mse = np.inf
     best_weight = None
     history = []
@@ -14,21 +13,19 @@ def training(device,model,loss_fn,optimizer,train_data,validation_data,batch_siz
         
         #training
         model.train()
-        with tqdm(range(0,n_train,batch_size), desc = f'Epoch {t}',dynamic_ncols=True, unit="batch") as pbar:
-            for i in pbar:
-                batch = i/batch_size
+        with tqdm(trainloader, desc = f'Epoch {t}',dynamic_ncols=True, unit="batch") as pbar:
+            for batch_num, data in enumerate(pbar,0):
                 
-                #get image
-                batch_indice = train_data.indices[i:i+batch_size]
-                input_image = train_data.dataset.images_as_tensor(batch_indice)
-                input_image = input_image.reshape(input_image.shape[0],1,512,512)
-                input_image = input_image.to(device)
-                output_label = (train_data.dataset.labels_as_tensor(batch_indice,"pressure")).to(device)
-                #print(output_label)
+                
+                #get image and label
+                input_images, input_labels = data
+                input_images, input_labels = torch.Tensor(input_images).float(), torch.Tensor(input_labels).long()
+                input_images = torch.reshape(input_images, [input_images.size()[0], 1, input_images.size()[1], input_images.size()[2]])
+                input_images, input_labels  = input_images.to(device), input_labels.to(device)
                 
                 # Compute prediction error
-                pred = model(input_image)
-                loss = loss_fn(pred, output_label.float())
+                pred = model(input_images)
+                loss = loss_fn(pred, input_labels.float())
                 #print(f"loss  = {loss}")
                 
                 # Backpropagation
@@ -44,7 +41,7 @@ def training(device,model,loss_fn,optimizer,train_data,validation_data,batch_siz
         print(f"    Training done !")
 
         #testing
-        mse = testing(device,model,loss_fn,validation_data,batch_size)
+        mse = testing(device,model,loss_fn,testloader,batch_size)
         
         #saving best model
         history.append(mse)

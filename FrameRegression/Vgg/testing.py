@@ -1,27 +1,27 @@
 from tqdm import tqdm
 import torch
 
-def testing(device,model,loss_fn,test_data,batch_size) :
+def testing(device,model,loss_fn,testloader,batch_size) :
     #testing
     model.eval()
     mse = 0
-    n_test= 1000 #len(test_data)
-    num_batches= n_test /batch_size
+    num_batches= len(testloader)
+    n_test= num_batches * batch_size
     
     with torch.no_grad():
-        with tqdm(range(0,n_test,batch_size),dynamic_ncols=True,unit="batch",desc="Testing") as pbar:
-            for i in pbar:
-                #batch = i/batch_size            
-                batch_indice = test_data.indices[i:i+batch_size]
+        with tqdm(testloader,dynamic_ncols=True,unit="batch",desc="Testing") as pbar:
+            for batch_number,data in enumerate(pbar,0):            
                 
-                #get Image
-                input_image = test_data.dataset.images_as_tensor(batch_indice)
-                input_image = input_image.reshape(input_image.shape[0],1,512,512).to(device)
-                input_label = test_data.dataset.labels_as_tensor(batch_indice,"pressure").to(device)
+                
+                #get Image and label
+                input_images, input_labels = data
+                input_images, input_labels = torch.Tensor(input_images).float(), torch.Tensor(input_labels).long()
+                input_images = torch.reshape(input_images, [input_images.size()[0], 1, input_images.size()[1], input_images.size()[2]])
+                input_images, input_labels  = input_images.to(device), input_labels.to(device)
                 
                 # Compute prediction error
-                pred = model(input_image)
-                mse += loss_fn(pred, input_label.long())  
+                pred = model(input_images)
+                mse += loss_fn(pred, input_labels.long())  
                 
                 # print accuracy on load bar every 50 batch
                 #if batch%50 == 1:

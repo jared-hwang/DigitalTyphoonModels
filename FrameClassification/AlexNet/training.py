@@ -6,30 +6,37 @@ from tqdm import tqdm
 
 from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
 
+def filter(image):
+    return (image.grade() < 7)
+
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 print('device used: ', device)
 
 # Import the database in a dataset_obj
 print('importing dataset...')
-dataset_obj = DigitalTyphoonDataset("/home/dataset/image/", 
+dataset_obj = DigitalTyphoonDataset("/home/dataset/image/",
                                     "/home/dataset/track/", 
                                     "/home/dataset/metadata.json",
+                                    'grade',
                                     split_dataset_by='frame',
-                                    load_data_into_memory='all_data',
                                     get_images_by_sequence=False,
+                                    load_data_into_memory='all_data',
                                     ignore_list=[],
+                                    filter_func=filter,
                                     verbose=False)
 
 # Split Data
 g1 = torch.Generator().manual_seed(83)
-train, test = dataset_obj.random_split([0.80, 0.20], split_by='frame', generator=g1)
+train_part = 0.8
+train, test = dataset_obj.random_split([train_part, 1-train_part], split_by='frame', generator=g1)
 print('%d images loaded in the train_set'% len(train.indices))
 
-# Define parameters
-n = 50000 #len(train)
-batch_size = 16
-mean = 269.6207
-std = 36.0843
+train_loader = torch.utils.data.DataLoader(train, batch_size=16,
+                                           shuffle=True, num_workers=8)
+
+# Define mean and std for standardization
+mean = 269.5767
+std = 34.3959
 
 # Instantiate the network and define the loss function and optimizer
 net = alexnet(num_classes=8)
@@ -44,13 +51,14 @@ print('Start training')
 for epoch in range(100):
     print('Epoch: ', epoch)
     running_loss = 0.0
-    with tqdm(range(0, n, batch_size), dynamic_ncols=True) as pbar:
-        for i in pbar:
-            inputs = ((dataset_obj.images_as_tensor(train.indices[i: i + batch_size]) - mean) / std).to(device)
+    with tqdm(train_loader, dynamic_ncols=True) as pbar:
+        for i, data in enumerate(pbar, 0):
+            inputs, labels = data
+            inputs = ((inputs - mean) / std).float()
             assert not torch.any(torch.isnan(inputs))
             inputs = inputs.reshape(inputs.shape[0], 1, 512, 512).to(device)
-            labels = dataset_obj.labels_as_tensor(train.indices[i: i + batch_size], 'grade').to(device)
-    
+            labels = labels.to(device)
+
             optimizer.zero_grad()
             outputs = net(inputs)
             loss = criterion(outputs, labels.long())
@@ -68,9 +76,9 @@ for epoch in range(100):
                 pbar.set_postfix({'loss': running_loss/(i%2000)})
 
     # Save the current model
-    PATH = 'model_vuillod/models_25_04/net_%d_tmp%d.pth'% (n, epoch)
+    PATH = 'net_%0.2f_tmp%d.pth'% (train_part, epoch)
     print(PATH)
     torch.save(net.state_dict(), PATH)
-    print("model saved with %d epochs"% epoch)
+    print("model saved with %d epochs and trained with %0.2f%% of the images"% (epoch, train_part))
 
 print('Finished Training')
