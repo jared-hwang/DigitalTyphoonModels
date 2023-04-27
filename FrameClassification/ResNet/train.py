@@ -42,7 +42,7 @@ model = ResNet(ResidualBlock, [3, 4, 6, 3]).to(device)
 
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.001)
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
 # Open the dataset
 dataset = DigitalTyphoonDataset(str(images_path),
