@@ -50,7 +50,7 @@ model.fc = nn.Linear(in_features=512, out_features=8, bias=True)
 model = model.to(device)
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.001)
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
 def image_filter(image):
     return image.grade() < 7
