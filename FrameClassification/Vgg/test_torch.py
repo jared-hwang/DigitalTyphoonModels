@@ -27,7 +27,7 @@ device = (
 
 
 model = vgg16_bn()
-
+if i!=0 :
 model.features[0]= nn.Conv2d(1,64,kernel_size=(3,3),stride=(1,1),padding=(1,1))
 model.features[-1]=nn.AdaptiveMaxPool2d(7*7)
 #model.avgpool=nn.AdaptiveAvgPool2d(7*7)
