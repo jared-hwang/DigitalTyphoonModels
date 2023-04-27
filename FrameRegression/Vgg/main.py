@@ -26,6 +26,7 @@ path_to_save = f"./digtyp/models/model_vgg_regression_{epochs}_{batch_size}"
 learning_rate= 0.001
 loss_fn = nn.MSELoss()
 
+print("Warning :  This model has exploding gradient problem")
 
 #loading data base
 dataset_obj = DigitalTyphoonDataset("/app/datasets/wnp/image/", 
