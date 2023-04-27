@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import seaborn as sn
 import numpy as np
 
+from torch.utils.data import DataLoader
+
 from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
 
 from model import *
@@ -17,9 +19,9 @@ from saving import *
 
 
 #variables :
-train_size = 0.8
-test_size = 0.1
-validation_size = 0.1
+train_size = 0.19
+test_size = 0.01
+validation_size = 0.8
 num_class = 8
 
 if(train_size+test_size+validation_size !=1) : print(f"WARNING : SUM OF SIZES != 1 !!")
@@ -32,6 +34,8 @@ path_to_save = f"./digtyp/models/model_vgg_classification_{epochs}_{batch_size}"
 
 learning_rate= 0.001
 loss_fn = nn.CrossEntropyLoss()
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 #loading data base
@@ -48,14 +52,9 @@ dataset_obj = DigitalTyphoonDataset("/app/datasets/wnp/image/",
 train_data, test_data , validation_data = dataset_obj.random_split([train_size,test_size,validation_size],split_by=split)
 print("data size : train = ",len(train_data),", test = ",len(test_data),", validation = ",len(validation_data))
 
-#getting device :
-device = (
-    "cuda"
-    if torch.cuda.is_available()
-    else "mps"
-    if torch.backends.mps.is_available()
-    else "cpu"
-)
+trainloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=4)
+testloader = DataLoader(test_data, batch_size=batch_size, shuffle=True, num_workers=4)
+validationloader = DataLoader(validation_data, batch_size=batch_size, shuffle =False, num_workers=4)
 
 #creating model :
 model = model_vgg(device,num_class)
@@ -63,10 +62,17 @@ model = model_vgg(device,num_class)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 #training model
-training(device,model,loss_fn,optimizer,train_data,test_data,batch_size,epochs)
+training(device,model,loss_fn,optimizer,trainloader,testloader,batch_size,epochs)
 
 #testing model
-accuracy,cm,f1 = testing(device,model,loss_fn,validation_data,batch_size)
+accuracy,cm,f1 = testing(device,model,loss_fn,testloader,batch_size)
+
+#accuracy,cm,f1 = testing(device,model,loss_fn,validationloader,batch_size)
+
+
+
+
+
 
 
 #plotting cm    

@@ -2,41 +2,41 @@ from tqdm import tqdm
 import torch
 from sklearn.metrics import confusion_matrix,f1_score
 
-def testing(device,model,loss_fn,test_data,batch_size) :
+def testing(device,model,loss_fn,testloader,batch_size) :
     #testing
     model.eval()
     cm = torch.zeros(10,10,dtype= int).to(device)
     truth_labels = []
     predicted_labels=[]
     test_loss, correct = 0, 0
-    n_test= len(test_data)
-    num_batches= n_test /batch_size
+    num_batches= len(testloader)
+    n_test= num_batches * batch_size
     
     with torch.no_grad():
-        with tqdm(range(0,n_test,batch_size),dynamic_ncols=True,unit="batch",desc="Testing") as pbar:
-            for i in pbar:
-                batch = i/batch_size            
-                batch_indice = test_data.indices[i:i+batch_size]
+        with tqdm(testloader,dynamic_ncols=True,unit="batch",desc="Testing") as pbar:
+            for batch_number,data in enumerate(pbar,0):            
                 
-                #get Image
-                input_image = test_data.dataset.images_as_tensor(batch_indice)
-                input_image = input_image.reshape(input_image.shape[0],1,512,512).to(device)
-                input_label = test_data.dataset.labels_as_tensor(batch_indice,"grade").to(device)
+                
+                #get Image and label
+                input_images, input_labels = data
+                input_images, input_labels = torch.Tensor(input_images).float(), torch.Tensor(input_labels).long()
+                input_images = torch.reshape(input_images, [input_images.size()[0], 1, input_images.size()[1], input_images.size()[2]])
+                input_images, input_labels  = input_images.to(device), input_labels.to(device)
                 
                 # Compute prediction error
-                pred = model(input_image)
-                test_loss += loss_fn(pred, input_label.long()).item()
-                correct += (pred.argmax(1) == input_label).type(torch.float).sum().item()
+                pred = model(input_images)
+                test_loss += loss_fn(pred, input_labels).item()
+                correct += (pred.argmax(1) == input_labels).type(torch.float).sum().item()
                 
                 
                 
                 # print accuracy on load bar every 50 batch
                 #if batch%50 == 1:
-                accuracy = correct * 100 /(i+1) 
+                accuracy = correct * 100 /((batch_number+1)*batch_size) 
                 pbar.set_postfix({'accuracy':accuracy})
                     
                 #add labels to a list for confusion matrix later
-                truth_labels.append(float(input_label[0].to('cpu')))
+                truth_labels.append(float(input_labels[0].to('cpu')))
                 predicted_label = torch.argmax(pred).to('cpu')
                 predicted_labels.append(float(predicted_label))
                 

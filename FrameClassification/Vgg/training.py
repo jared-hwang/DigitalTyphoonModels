@@ -1,29 +1,27 @@
 from tqdm import tqdm
 from testing import *
 
-def training(device,model,loss_fn,optimizer,train_data,validation_data,batch_size,epochs) -> float:
+def training(device,model,loss_fn,optimizer,trainloader,testloader,batch_size,epochs) -> float:
     t=1
     accuracy=0
-    n_train = len(train_data)
     
     while t <= epochs : 
         
         #training
         model.train()
-        with tqdm(range(0,n_train,batch_size), desc = f'Epoch {t}',dynamic_ncols=True, unit="batch") as pbar:
-            for i in pbar:
-                batch = i/batch_size
+        with tqdm(trainloader, desc = f'Epoch {t}',dynamic_ncols=True, unit="batch") as pbar:
+            for batch_num, data in enumerate(pbar,0):
                 
-                #get image
-                batch_indice = train_data.indices[i:i+batch_size]
-                input_image = train_data.dataset.images_as_tensor(batch_indice)
-                input_image = input_image.reshape(input_image.shape[0],1,512,512)
-                input_image = input_image.to(device)
-                output_label = (train_data.dataset.labels_as_tensor(batch_indice,"grade")).to(device)
+                
+                #get image and label
+                input_images, input_labels = data
+                input_images, input_labels = torch.Tensor(input_images).float(), torch.Tensor(input_labels).long()
+                input_images = torch.reshape(input_images, [input_images.size()[0], 1, input_images.size()[1], input_images.size()[2]])
+                input_images, input_labels  = input_images.to(device), input_labels.to(device)
                 
                 # Compute prediction error
-                pred = model(input_image)
-                loss = loss_fn(pred, output_label.long())
+                pred = model(input_images)
+                loss = loss_fn(pred, input_labels)
                 
                 # Backpropagation
                 optimizer.zero_grad()
@@ -39,7 +37,7 @@ def training(device,model,loss_fn,optimizer,train_data,validation_data,batch_siz
         print(f"    Training done !")
 
         #testing
-        accuracy,cm,f1 = testing(device,model,loss_fn,validation_data,batch_size)        
+        accuracy,cm,f1 = testing(device,model,loss_fn,testloader,batch_size)        
         t+=1
     print("Done!")
     return accuracy ,cm ,f1

@@ -26,6 +26,8 @@ path_to_save = f"./digtyp/models/model_vgg_regression_{epochs}_{batch_size}"
 learning_rate= 0.001
 loss_fn = nn.MSELoss()
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 print("Warning :  This model has exploding gradient problem")
 
 #loading data base
@@ -41,15 +43,6 @@ dataset_obj = DigitalTyphoonDataset("/app/datasets/wnp/image/",
 #spliting :
 train_data, test_data , validation_data = dataset_obj.random_split([train_size,test_size,validation_size],split_by=split)
 print("data size : train = ",len(train_data),", test = ",len(test_data),", validation = ",len(validation_data))
-
-#getting device :
-device = (
-    "cuda"
-    if torch.cuda.is_available()
-    else "mps"
-    if torch.backends.mps.is_available()
-    else "cpu"
-)
 
 #creating model :
 model = model_vgg(device,num_class)
