@@ -35,14 +35,14 @@ torch.manual_seed(SEED)
 
 # Create the model
 num_classes = 7
-num_epochs = 3
+num_epochs = 30
 batch_size = 16
 learning_rate = 0.01
 model = ResNet(ResidualBlock, [3, 4, 6, 3]).to(device)
 
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.001)
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
 # Open the dataset
 dataset = DigitalTyphoonDataset(str(images_path),

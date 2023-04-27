@@ -47,13 +47,13 @@ model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=False)
 model.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
 model.fc = nn.Linear(in_features=512, out_features=8, bias=True)
 
-# Trying max pool
-# model.avgpool = torch.nn.AdaptiveMaxPool2d(output_size=(1, 1))
-
 model = model.to(device)
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.001)
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+
+def image_filter(image):
+    return image.grade() < 7
 
 # Open the dataset
 dataset = DigitalTyphoonDataset(str(images_path),
@@ -61,6 +61,7 @@ dataset = DigitalTyphoonDataset(str(images_path),
                                 str(metadata_path),
                                 'grade',
                                 load_data_into_memory=load_data,
+                                filter_func=image_filter,
                                 verbose=False)
 
 if use_small:
@@ -81,7 +82,3 @@ torch.save(model.state_dict(), str(save_path / 'saved_models' / f'built_in_resne
 with open(str(save_path / 'logs' / f'built_in_resnet_log_{curr_time_str}'), 'w') as writer:
     writer.write(train_log_string)
     writer.write(f'\n start time: {start_time_str}')
-
-
-
-
