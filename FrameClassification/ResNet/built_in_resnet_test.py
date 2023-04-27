@@ -82,7 +82,7 @@ train_log_string += train(model, trainloader, optimizer, criterion, num_epochs, 
 
 curr_time_str = str(datetime.datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
 testloader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
-val_log_string = validate(model, testloader, criterion, device, curr_time_str, save_path)
+val_log_string = validate(model, testloader, criterion, device, curr_time_str, save_path, num_classes=5)
 train_log_string += val_log_string
 
 torch.save(model.state_dict(), str(save_path / 'saved_models' / f'built_in_resnet_weights_{curr_time_str}.pt'))

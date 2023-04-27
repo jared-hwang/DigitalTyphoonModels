@@ -67,7 +67,7 @@ def train(model, trainloader, optimizer, criterion,
     return log_string
 
 
-def validate(model, testloader, criterion, device, timestring, savepath):
+def validate(model, testloader, criterion, device, timestring, savepath, num_classes=5):
     print('Validation')
     model.eval()
     valid_running_loss = 0.0
@@ -101,7 +101,6 @@ def validate(model, testloader, criterion, device, timestring, savepath):
         weighted_f1_result = f1_score(truth_labels, predicted_labels, average='weighted')
         accuracy = 100 * accuracy_score(truth_labels, predicted_labels)
 
-        num_classes = 6
         # Build confusion matrix
         cf_matrix = confusion_matrix(truth_labels, predicted_labels)
         df_cm = pd.DataFrame(cf_matrix, index=[i for i in range(num_classes)],
