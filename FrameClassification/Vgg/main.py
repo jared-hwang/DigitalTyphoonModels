@@ -60,7 +60,7 @@ device = (
 #creating model :
 model = model_vgg(device,num_class)
 
-optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 #training model
 training(device,model,loss_fn,optimizer,train_data,test_data,batch_size,epochs)
