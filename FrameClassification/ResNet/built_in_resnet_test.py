@@ -6,7 +6,7 @@ import torch.nn as nn
 from pathlib import Path
 
 from train_utils import train, validate
-from model import ResidualBlock, ResNet
+from torch.utils.data import DataLoader
 from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
 
 import argparse
@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--dataroot', required=True, type=str, help='path to the root data directory')
 parser.add_argument('--savepath', required=True, type=str, help='path to the directory to save the models and logs')
 parser.add_argument('--loaddata', default=False, type=bool, help='path to the root data directory')
+parser.add_argument('--small', default=False, type=bool, help='Bool to use small or full dataset')
 args = parser.parse_args()
 dataroot = Path(args.dataroot)
 data_path = dataroot
@@ -23,6 +24,8 @@ if args.loaddata:
     load_data = 'all_data'
 else:
     load_data = False
+
+use_small = args.small
 
 # data_path = Path.home() / 'data'
 images_path = str(data_path / 'image') + '/'
@@ -35,7 +38,7 @@ torch.manual_seed(SEED)
 
 # Create the model
 num_classes = 7
-num_epochs = 30
+num_epochs = 1
 batch_size = 16
 learning_rate = 0.01
 
@@ -56,26 +59,24 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=
 dataset = DigitalTyphoonDataset(str(images_path),
                                 str(track_path),
                                 str(metadata_path),
+                                'grade',
                                 load_data_into_memory=load_data,
                                 verbose=False)
 
+if use_small:
+    train_set, test_set, _ = dataset.random_split([0.01, 0.01, 0.98], split_by='frame')
+else:
+    train_set, test_set = dataset.random_split([0.8, 0.2], split_by='frame')
 
-# Open the dataset
-# dataset = DigitalTyphoonDataset("/Users/jaredhwang/PycharmProjects/typhoonDataset/tests/test_data_files/image/",
-#                                 "/Users/jaredhwang/PycharmProjects/typhoonDataset/tests/test_data_files/track/",
-#                                 "/Users/jaredhwang/PycharmProjects/typhoonDataset/tests/test_data_files/metadata.json",
-#                                 verbose=False)
-
-train_set, test_set = dataset.random_split([0.8, 0.2], split_by='frame')
-#train_set, test_set, _ = dataset.random_split([0.05, 0.05, 0.9])
-train_indices = train_set.indices
-
-train_log_string = train(model, dataset, train_set, optimizer, criterion, num_epochs, batch_size, device, save_path)
-val_loss, val_acc, val_f1_result = validate(model, dataset, test_set, criterion, device, save_path)
-train_log_string += f"Validation: \n \t loss: {val_loss} \n \t acc: {val_acc} \n \t val_f1: {val_f1_result}"
+trainloader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
+train_log_string = train(model, trainloader, optimizer, criterion, num_epochs, device, save_path)
 
 curr_time_str = str(datetime.datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
-torch.save(model.state_dict(), str(save_path / 'saved_models' / f'built_in_resnet_weights_{curr_time_str}'))
+testloader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
+val_log_string = validate(model, testloader, criterion, device, curr_time_str, save_path)
+train_log_string += val_log_string
+
+torch.save(model.state_dict(), str(save_path / 'saved_models' / f'built_in_resnet_weights_{curr_time_str}.pt'))
 
 with open(str(save_path / 'logs' / f'built_in_resnet_log_{curr_time_str}'), 'w') as writer:
     writer.write(train_log_string)
