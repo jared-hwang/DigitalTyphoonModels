@@ -48,7 +48,6 @@ def train(model, trainloader, optimizer, criterion,
             loss.backward()
             # update weights
             optimizer.step()
-            return 'hello'
 
 
         # Loss and accuracy for the complete epoch.
