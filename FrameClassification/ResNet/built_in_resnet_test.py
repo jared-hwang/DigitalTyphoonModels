@@ -16,6 +16,7 @@ parser.add_argument('--dataroot', required=True, type=str, help='path to the roo
 parser.add_argument('--savepath', required=True, type=str, help='path to the directory to save the models and logs')
 parser.add_argument('--loaddata', default=False, type=bool, help='path to the root data directory')
 parser.add_argument('--small', default=False, type=bool, help='Bool to use small or full dataset')
+parser.add_argument('--split_by', default='frame', type=str, help='How to split the dataset')
 args = parser.parse_args()
 dataroot = Path(args.dataroot)
 data_path = dataroot
@@ -38,7 +39,7 @@ torch.manual_seed(SEED)
 
 # Create the model
 num_classes = 7
-num_epochs = 1
+num_epochs = 30
 batch_size = 16
 learning_rate = 0.01
 
@@ -65,12 +66,19 @@ dataset = DigitalTyphoonDataset(str(images_path),
                                 verbose=False)
 
 if use_small:
-    train_set, test_set, _ = dataset.random_split([0.01, 0.01, 0.98], split_by='frame')
+    train_set, test_set, _ = dataset.random_split([0.01, 0.01, 0.98], split_by=args.split_by)
 else:
-    train_set, test_set = dataset.random_split([0.8, 0.2], split_by='frame')
+    train_set, test_set = dataset.random_split([0.8, 0.2], split_by=args.split_by)
 
 trainloader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
-train_log_string = train(model, trainloader, optimizer, criterion, num_epochs, device, save_path)
+
+train_log_string = f'Start time: {start_time_str} \n' \
+                   f'Num epochs: {num_epochs} \n' \
+                   f'Batch size: {batch_size} \n' \
+                   f'Learning rate: {learning_rate} \n ' \
+                   f'Split by: {args.split_by} \n'
+
+train_log_string += train(model, trainloader, optimizer, criterion, num_epochs, device, save_path)
 
 curr_time_str = str(datetime.datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
 testloader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
