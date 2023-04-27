@@ -9,7 +9,7 @@ def testing(device,model,loss_fn,test_data,batch_size) :
     truth_labels = []
     predicted_labels=[]
     test_loss, correct = 0, 0
-    n_test=100 #len(test_data)
+    n_test= len(test_data)
     num_batches= n_test /batch_size
     
     with torch.no_grad():

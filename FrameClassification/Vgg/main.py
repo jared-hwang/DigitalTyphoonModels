@@ -20,7 +20,7 @@ from saving import *
 train_size = 0.8
 test_size = 0.1
 validation_size = 0.1
-num_class = 6
+num_class = 8
 
 if(train_size+test_size+validation_size !=1) : print(f"WARNING : SUM OF SIZES != 1 !!")
 
@@ -30,7 +30,8 @@ batch_size = 16
 epochs = 5
 path_to_save = f"./digtyp/models/model_{epochs}_{batch_size}"
 
-
+learning_rate= 0.001
+loss_fn = nn.CrossEntropyLoss()
 
 
 #loading data base
@@ -39,6 +40,7 @@ dataset_obj = DigitalTyphoonDataset("/app/datasets/wnp/image/",
                                     "/app/datasets/wnp/metadata.json", 
                                     split_dataset_by='sequence',
                                     load_data_into_memory=False,
+                                    labels='grade',
                                     ignore_list=[],
                                     verbose=False)
 
@@ -55,11 +57,10 @@ device = (
     else "cpu"
 )
 
-#creatting model :
-model = model_vgg(device)
+#creating model :
+model = model_vgg(device,num_class)
 
-loss_fn = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
 #training model
 training(device,model,loss_fn,optimizer,train_data,test_data,batch_size,epochs)
@@ -69,9 +70,8 @@ accuracy,cm,f1 = testing(device,model,loss_fn,validation_data,batch_size)
 
 
 #plotting cm    
-
-df_cm = pd.DataFrame(cm, index=[i for i in range(num_class)],
-                        columns=[i for i in range(num_class)])  
+df_cm = pd.DataFrame(cm, index=[i for i in range(11)],
+                        columns=[i for i in range(11)])  
 
 curr_time_str = str(datetime.datetime.now().strftime("%d_%m_%Y-%H.%M.%S"))  
 plt.figure(figsize=(12, 7))
@@ -80,8 +80,8 @@ plt.savefig(str(path_to_save / 'logs' / f'vgg_confusion_matrix_{curr_time_str}.p
 
 #normalize confusion mat
 plt.clf()
-df_cm = pd.DataFrame(cm / np.sum(cm, axis=1)[:, None], index=[i for i in range(num_class)],
-                        columns=[i for i in range(num_class)])
+df_cm = pd.DataFrame(cm / np.sum(cm, axis=1)[:, None], index=[i for i in range(11)],
+                        columns=[i for i in range(11)])
 
 sn.heatmap(df_cm, annot=True, fmt='g')
 plt.savefig(str(path_to_save / 'logs' / f'vgg_confusion_matrix_norm_{curr_time_str}.png'))

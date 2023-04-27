@@ -4,7 +4,7 @@ from testing import *
 def training(device,model,loss_fn,optimizer,train_data,validation_data,batch_size,epochs) -> float:
     t=0
     accuracy=0
-    n_train = 500 #len(train_data)
+    n_train = len(train_data)
     
     while t < epochs : 
         
