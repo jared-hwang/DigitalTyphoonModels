@@ -35,7 +35,7 @@ torch.manual_seed(SEED)
 
 # Create the model
 num_classes = 7
-num_epochs = 3
+num_epochs = 30
 batch_size = 16
 learning_rate = 0.01
 model = ResNet(ResidualBlock, [3, 4, 6, 3]).to(device)
