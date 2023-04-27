@@ -9,25 +9,30 @@ from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 print('device used: ', device)
 
+def filter(image):
+    return (image.grade() < 7)
+
 # Import the database in a dataset_obj
 print('importing dataset...')
 dataset_obj = DigitalTyphoonDataset("/home/dataset/image/", 
                                     "/home/dataset/track/", 
                                     "/home/dataset/metadata.json",
+                                    'grade',
                                     split_dataset_by='frame',
                                     load_data_into_memory='all_data',
                                     get_images_by_sequence=False,
                                     ignore_list=[],
+                                    filter_func=filter,
                                     verbose=False)
 
 # Split Data
 g1 = torch.Generator().manual_seed(83)
-test, train = dataset_obj.random_split([0.80, 0.20], split_by='frame', generator=g1)
+train, test = dataset_obj.random_split([0.80, 0.20], split_by='frame', generator=g1)
 
 # Define parameters
-n = 37851 #len(test)
-mean = 269.6207
-std = 36.0843
+n = len(test)
+mean = 269.5767
+std = 34.3959
 batch_size = 16
 print('number of images in test_set: ', n)
 
@@ -43,8 +48,8 @@ all_confusion_matrices = torch.zeros(100, 8, 8, dtype=int)
     # torch.save(all_confusion_matrices, 'all_confusion_matrices.pt')
 
 # Test the network
-for epoch in range(100):
-    PATH = 'model_vuillod/models_25_04/net_50000_tmp%d.pth'% epoch
+for epoch in range(1):
+    PATH = 'net_0.80_tmp%d.pth'% epoch
     net.load_state_dict(torch.load(PATH))
     net.eval()
 
@@ -78,7 +83,7 @@ for epoch in range(100):
     print('confusion matrix :\n', all_confusion_matrices[epoch].int())
 
     # Saves
-    f = open("accuracies_25_04_trainset.txt", "a")
+    f = open("accuracies.txt", "a")
     f.write(str(epoch) + ": " + str(100 * correct / total) + '\n')
     f.close()
 
