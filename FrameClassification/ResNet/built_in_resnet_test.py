@@ -38,7 +38,7 @@ SEED = 83
 torch.manual_seed(SEED)
 
 # Create the model
-num_epochs = 30
+num_epochs = 50
 batch_size = 16
 learning_rate = 0.01
 
@@ -80,7 +80,7 @@ train_log_string = f'Start time: {start_time_str} \n' \
 train_log_string += train(model, trainloader, optimizer, criterion, num_epochs, device, save_path)
 
 curr_time_str = str(datetime.datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
-testloader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
+testloader = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=8)
 val_log_string = validate(model, testloader, criterion, device, curr_time_str, save_path, num_classes=5)
 train_log_string += val_log_string
 

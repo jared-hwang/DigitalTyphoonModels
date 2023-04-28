@@ -95,7 +95,7 @@ def validate(model, testloader, criterion, device, timestring, savepath, num_cla
 
 
         # Loss and accuracy for the complete epoch.
-        epoch_loss = valid_running_loss / len(truth_labels)
+        epoch_loss = valid_running_loss / len(testloader)
         micro_f1_result = f1_score(truth_labels, predicted_labels, average='micro')
         macro_f1_result = f1_score(truth_labels, predicted_labels, average='macro')
         weighted_f1_result = f1_score(truth_labels, predicted_labels, average='weighted')
@@ -121,7 +121,7 @@ def validate(model, testloader, criterion, device, timestring, savepath, num_cla
         log_string += f"Validation: \n \t loss: {epoch_loss} \n \t acc: {accuracy} \n \t micro_f1: {micro_f1_result} " \
                       f"\n \t macro_f1: {macro_f1_result}\n \t weighted_f1: {weighted_f1_result}"
 
-        print(f"\t Loss: {epoch_loss}")
+        print(f"\t Avg batch Loss: {epoch_loss}")
         print(f"\t Accuracy: {accuracy}%")
         print(f"\t Micro F1 Score: {micro_f1_result}")
         print(f"\t Macro average F1 Score: {macro_f1_result}")
