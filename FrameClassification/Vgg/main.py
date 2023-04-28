@@ -19,18 +19,19 @@ from saving import *
 
 
 #variables :
-train_size = 0.19
-test_size = 0.01
-validation_size = 0.8
+train_size = 0.8
+test_size = 0.1
+validation_size = 0.1
 num_class = 8
+num_workers = 8
 
 if(train_size+test_size+validation_size !=1) : print(f"WARNING : SUM OF SIZES != 1 !!")
 
 split = 'frame'
 
-batch_size = 16
-epochs = 5
-path_to_save = f"./digtyp/models/model_vgg_classification_{epochs}_{batch_size}"
+batch_size = 32
+epochs = 10
+path_to_save = f"./digtyp/FrameClassification/Vgg/models/model_vgg_classification_{epochs}_{batch_size}"
 
 learning_rate= 0.001
 loss_fn = nn.CrossEntropyLoss()
@@ -52,9 +53,9 @@ dataset_obj = DigitalTyphoonDataset("/app/datasets/wnp/image/",
 train_data, test_data , validation_data = dataset_obj.random_split([train_size,test_size,validation_size],split_by=split)
 print("data size : train = ",len(train_data),", test = ",len(test_data),", validation = ",len(validation_data))
 
-trainloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=4)
-testloader = DataLoader(test_data, batch_size=batch_size, shuffle=True, num_workers=4)
-validationloader = DataLoader(validation_data, batch_size=batch_size, shuffle =False, num_workers=4)
+trainloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+testloader = DataLoader(test_data, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+validationloader = DataLoader(validation_data, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
 #creating model :
 model = model_vgg(device,num_class)
@@ -73,7 +74,7 @@ accuracy,cm,f1 = testing(device,model,loss_fn,testloader,batch_size)
 
 
 
-
+print(cm)
 
 #plotting cm    
 df_cm = pd.DataFrame(cm, index=[i for i in range(11)],
