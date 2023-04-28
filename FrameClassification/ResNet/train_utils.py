@@ -95,7 +95,7 @@ def validate(model, testloader, criterion, device, timestring, savepath, num_cla
 
 
         # Loss and accuracy for the complete epoch.
-        epoch_loss = valid_running_loss
+        epoch_loss = valid_running_loss / len(truth_labels)
         micro_f1_result = f1_score(truth_labels, predicted_labels, average='micro')
         macro_f1_result = f1_score(truth_labels, predicted_labels, average='macro')
         weighted_f1_result = f1_score(truth_labels, predicted_labels, average='weighted')
@@ -112,8 +112,8 @@ def validate(model, testloader, criterion, device, timestring, savepath, num_cla
 
         # Save normalized confusion matrix
         plt.clf()
-        df_cm = pd.DataFrame(cf_matrix / np.sum(cf_matrix, axis=1)[:, None], index=[i for i in range(num_classes)],
-                             columns=[i for i in range(num_classes)])
+        df_cm = pd.DataFrame(cf_matrix / np.sum(cf_matrix, axis=1)[:, None], index=[i+2 for i in range(num_classes)],
+                             columns=[i+2 for i in range(num_classes)])
         sn.heatmap(df_cm, annot=True, fmt='g')
         plt.savefig(str(savepath / 'logs' / f'resnet_confusion_matrix_norm_{timestring}.png'))
 

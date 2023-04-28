@@ -1,5 +1,4 @@
 import datetime
-import os
 
 import torch
 import torch.nn as nn
@@ -38,13 +37,12 @@ SEED = 83
 torch.manual_seed(SEED)
 
 # Create the model
-num_classes = 7
 num_epochs = 30
 batch_size = 16
 learning_rate = 0.01
 
 start_time_str = str(datetime.datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
-model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=False)
+model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', weights=None)
 model.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
 model.fc = nn.Linear(in_features=512, out_features=8, bias=True)
 
@@ -87,6 +85,5 @@ train_log_string += val_log_string
 
 torch.save(model.state_dict(), str(save_path / 'saved_models' / f'built_in_resnet_weights_{curr_time_str}.pt'))
 
-with open(str(save_path / 'logs' / f'built_in_resnet_log_{curr_time_str}'), 'w') as writer:
+with open(str(save_path / 'logs' / f'log_{curr_time_str}.txt'), 'w') as writer:
     writer.write(train_log_string)
-    writer.write(f'\n start time: {start_time_str}')
