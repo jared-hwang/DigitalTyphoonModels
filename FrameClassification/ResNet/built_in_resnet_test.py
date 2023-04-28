@@ -20,6 +20,7 @@ args = parser.parse_args()
 dataroot = Path(args.dataroot)
 data_path = dataroot
 save_path = Path(args.savepath)
+save_path = save_path / args.split_by
 if args.loaddata:
     load_data = 'all_data'
 else:
