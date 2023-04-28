@@ -67,7 +67,7 @@ def train(model, trainloader, optimizer, criterion,
     return log_string
 
 
-def validate(model, testloader, criterion, device, timestring, savepath):
+def validate(model, testloader, criterion, device, timestring, savepath, num_classes=5):
     print('Validation')
     model.eval()
     valid_running_loss = 0.0
@@ -95,13 +95,12 @@ def validate(model, testloader, criterion, device, timestring, savepath):
 
 
         # Loss and accuracy for the complete epoch.
-        epoch_loss = valid_running_loss
+        epoch_loss = valid_running_loss / len(testloader)
         micro_f1_result = f1_score(truth_labels, predicted_labels, average='micro')
         macro_f1_result = f1_score(truth_labels, predicted_labels, average='macro')
         weighted_f1_result = f1_score(truth_labels, predicted_labels, average='weighted')
         accuracy = 100 * accuracy_score(truth_labels, predicted_labels)
 
-        num_classes = 6
         # Build confusion matrix
         cf_matrix = confusion_matrix(truth_labels, predicted_labels)
         df_cm = pd.DataFrame(cf_matrix, index=[i for i in range(num_classes)],
@@ -113,8 +112,8 @@ def validate(model, testloader, criterion, device, timestring, savepath):
 
         # Save normalized confusion matrix
         plt.clf()
-        df_cm = pd.DataFrame(cf_matrix / np.sum(cf_matrix, axis=1)[:, None], index=[i for i in range(num_classes)],
-                             columns=[i for i in range(num_classes)])
+        df_cm = pd.DataFrame(cf_matrix / np.sum(cf_matrix, axis=1)[:, None], index=[i+2 for i in range(num_classes)],
+                             columns=[i+2 for i in range(num_classes)])
         sn.heatmap(df_cm, annot=True, fmt='g')
         plt.savefig(str(savepath / 'logs' / f'resnet_confusion_matrix_norm_{timestring}.png'))
 
@@ -122,7 +121,7 @@ def validate(model, testloader, criterion, device, timestring, savepath):
         log_string += f"Validation: \n \t loss: {epoch_loss} \n \t acc: {accuracy} \n \t micro_f1: {micro_f1_result} " \
                       f"\n \t macro_f1: {macro_f1_result}\n \t weighted_f1: {weighted_f1_result}"
 
-        print(f"\t Loss: {epoch_loss}")
+        print(f"\t Avg batch Loss: {epoch_loss}")
         print(f"\t Accuracy: {accuracy}%")
         print(f"\t Micro F1 Score: {micro_f1_result}")
         print(f"\t Macro average F1 Score: {macro_f1_result}")
