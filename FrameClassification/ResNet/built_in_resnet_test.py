@@ -84,7 +84,7 @@ curr_time_str = str(datetime.datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
 testloader = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=8)
 
 if args.autostop:
-    train_log_string += train_autostop(model, trainloader, testloader, optimizer, criterion, num_epochs, device, save_path)
+    train_log_string += train_autostop(model, trainloader, testloader, optimizer, criterion, args.maxepochs, device, save_path)
 else:
     train_log_string += train(model, trainloader, optimizer, criterion, num_epochs, device, save_path)
 
