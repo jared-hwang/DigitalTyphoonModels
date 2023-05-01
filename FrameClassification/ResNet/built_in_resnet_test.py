@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from pathlib import Path
 
-from train_utils import train, validate
+from train_utils import train, validate, train_autostop
 from torch.utils.data import DataLoader
 from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
 
@@ -16,6 +16,8 @@ parser.add_argument('--savepath', required=True, type=str, help='path to the dir
 parser.add_argument('--loaddata', default=False, type=bool, help='path to the root data directory')
 parser.add_argument('--small', default=False, type=bool, help='Bool to use small or full dataset')
 parser.add_argument('--split_by', default='frame', type=str, help='How to split the dataset')
+parser.add_argument('--autostop', default=False, type=bool, help='If the training should be run until max epochs or until it stops converging')
+parser.add_argument('--maxepochs', default=100, type=int)
 args = parser.parse_args()
 dataroot = Path(args.dataroot)
 data_path = dataroot
@@ -40,7 +42,7 @@ torch.manual_seed(SEED)
 # Create the model
 num_epochs = 50
 batch_size = 16
-learning_rate = 0.01
+learning_rate = 0.1
 
 start_time_str = str(datetime.datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
 model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', weights=None)
@@ -72,15 +74,20 @@ else:
 trainloader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=8)
 
 train_log_string = f'Start time: {start_time_str} \n' \
-                   f'Num epochs: {num_epochs} \n' \
+                   f'Num/max epochs: {num_epochs} \n' \
                    f'Batch size: {batch_size} \n' \
                    f'Learning rate: {learning_rate} \n ' \
-                   f'Split by: {args.split_by} \n'
-
-train_log_string += train(model, trainloader, optimizer, criterion, num_epochs, device, save_path)
+                   f'Split by: {args.split_by} \n' \
+                   f'Autostop: {args.autostop} \n'
 
 curr_time_str = str(datetime.datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
 testloader = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=8)
+
+if args.autostop:
+    train_log_string += train_autostop(model, trainloader, testloader, optimizer, criterion, num_epochs, device, save_path)
+else:
+    train_log_string += train(model, trainloader, optimizer, criterion, num_epochs, device, save_path)
+
 val_log_string = validate(model, testloader, criterion, device, curr_time_str, save_path, num_classes=5)
 train_log_string += val_log_string
 

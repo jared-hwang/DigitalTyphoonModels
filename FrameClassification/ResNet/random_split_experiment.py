@@ -71,7 +71,9 @@ def train_one_resnet_model(split_by, save_path, split_lengths=None, num_epochs=3
                        f'Num epochs: {num_epochs} \n' \
                        f'Batch size: {batch_size} \n' \
                        f'Learning rate: {learning_rate} \n ' \
-                       f'Split by: {split_by} \n '
+                       f'Split by: {split_by} \n ' \
+                       f'Train set length: {len(train_set)} \n ' \
+                       f'Test set length: {len(test_set)}'
 
     train_log_string += train(model, trainloader, optimizer, criterion, num_epochs, device, split_save_path)
 
