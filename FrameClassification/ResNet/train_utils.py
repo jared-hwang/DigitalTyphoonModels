@@ -87,6 +87,8 @@ def train_autostop(model, trainloader, testloader, optimizer, criterion, max_epo
         log_string += f"Epoch {epoch + 1} \n \t loss: {epoch_loss} \n \t acc: {epoch_acc} \n"
 
         validation_loss = validate(model, testloader, criterion, device, None, savepath, save_results=False, num_classes=5)
+        print(f'Validation loss: {validation_loss}')
+        log_string += f'Validation loss: {validation_loss} \n'
 
         # Checkpoint
         torch.save({
