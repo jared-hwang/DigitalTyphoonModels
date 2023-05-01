@@ -81,7 +81,7 @@ def train_autostop(model, trainloader, testloader, optimizer, criterion, max_epo
     for epoch in np.arange(max_epochs):
         print(f"Epoch: {epoch + 1}")
 
-        epoch_loss, epoch_acc = train_one_epoch(model, trainloader)
+        epoch_loss, epoch_acc = train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, savepath)
         print(f"\t Avg batch Loss: {epoch_loss}")
         print(f"\t Accuracy: {epoch_acc}%")
         log_string += f"Epoch {epoch + 1} \n \t loss: {epoch_loss} \n \t acc: {epoch_acc} \n"
