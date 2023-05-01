@@ -14,6 +14,7 @@ from torchvision import datasets, transforms, models
 
 def train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, savepath):
     batches_per_epoch = len(trainloader)
+    num_train_samples = len(trainloader.dataset)
     model.train()
     print(f"Epoch: {epoch + 1}")
     train_running_loss = 0.0
@@ -46,7 +47,7 @@ def train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, sav
         optimizer.step()
 
     # Loss and accuracy for the complete epoch.
-    epoch_loss = train_running_loss / batches_per_epoch
+    epoch_loss = train_running_loss / num_train_samples
     epoch_acc = 100. * (train_running_correct / total)
 
     return epoch_loss, epoch_acc
@@ -58,7 +59,6 @@ def train(model, trainloader, optimizer, criterion,
     model.train()
 
     for epoch in range(epochs):
-        print(f"Epoch: {epoch + 1}")
         epoch_loss, epoch_acc = train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, savepath)
         print(f"\t Avg batch Loss: {epoch_loss}")
         print(f"\t Accuracy: {epoch_acc}%")
@@ -77,10 +77,8 @@ def train_autostop(model, trainloader, testloader, optimizer, criterion, max_epo
     log_string = ''
     model.train()
 
-    early_stopper = EarlyStopper(patience=3, min_delta=500)
+    early_stopper = EarlyStopper(patience=2, min_delta=1)
     for epoch in np.arange(max_epochs):
-        print(f"Epoch: {epoch + 1}")
-
         epoch_loss, epoch_acc = train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, savepath)
         print(f"\t Avg batch Loss: {epoch_loss}")
         print(f"\t Accuracy: {epoch_acc}%")
@@ -106,6 +104,7 @@ def validate(model, testloader, criterion, device, timestring, savepath, save_re
     print('Validation')
     model.eval()
     valid_running_loss = 0.0
+    num_validate_samples = len(testloader.dataset)
 
     truth_labels = []
     predicted_labels = []
@@ -130,7 +129,7 @@ def validate(model, testloader, criterion, device, timestring, savepath, save_re
 
 
         # Loss and accuracy for the complete epoch.
-        epoch_loss = valid_running_loss
+        epoch_loss = valid_running_loss / num_validate_samples
         micro_f1_result = f1_score(truth_labels, predicted_labels, average='micro')
         macro_f1_result = f1_score(truth_labels, predicted_labels, average='macro')
         weighted_f1_result = f1_score(truth_labels, predicted_labels, average='weighted')
