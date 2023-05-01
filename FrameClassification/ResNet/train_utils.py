@@ -77,7 +77,7 @@ def train_autostop(model, trainloader, testloader, optimizer, criterion, max_epo
     log_string = ''
     model.train()
 
-    early_stopper = EarlyStopper(patience=3, min_delta=10)
+    early_stopper = EarlyStopper(patience=3, min_delta=500)
     for epoch in np.arange(max_epochs):
         print(f"Epoch: {epoch + 1}")
 
