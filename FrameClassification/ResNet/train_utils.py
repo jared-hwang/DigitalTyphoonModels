@@ -60,7 +60,7 @@ def train(model, trainloader, optimizer, criterion,
 
     for epoch in range(epochs):
         epoch_loss, epoch_acc = train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, savepath)
-        print(f"\t Avg batch Loss: {epoch_loss}")
+        print(f"\t Average Sample Loss: {epoch_loss}")
         print(f"\t Accuracy: {epoch_acc}%")
         log_string += f"Epoch {epoch + 1} \n \t loss: {epoch_loss} \n \t acc: {epoch_acc} \n"
 
@@ -77,15 +77,15 @@ def train_autostop(model, trainloader, testloader, optimizer, criterion, max_epo
     log_string = ''
     model.train()
 
-    early_stopper = EarlyStopper(patience=2, min_delta=1)
+    early_stopper = EarlyStopper(patience=3, min_delta=0.03)
     for epoch in np.arange(max_epochs):
         epoch_loss, epoch_acc = train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, savepath)
-        print(f"\t Avg batch Loss: {epoch_loss}")
+        print(f"\t Avg Sample Loss: {epoch_loss}")
         print(f"\t Accuracy: {epoch_acc}%")
         log_string += f"Epoch {epoch + 1} \n \t loss: {epoch_loss} \n \t acc: {epoch_acc} \n"
 
         validation_loss = validate(model, testloader, criterion, device, None, savepath, save_results=False, num_classes=5)
-        print(f'Validation loss: {validation_loss}')
+        print(f'\t Validation loss: {validation_loss}')
         log_string += f'Validation loss: {validation_loss} \n'
 
         # Checkpoint
@@ -158,7 +158,7 @@ def validate(model, testloader, criterion, device, timestring, savepath, save_re
             log_string += f"Validation: \n \t loss: {epoch_loss} \n \t acc: {accuracy} \n \t micro_f1: {micro_f1_result} " \
                           f"\n \t macro_f1: {macro_f1_result}\n \t weighted_f1: {weighted_f1_result}"
 
-            print(f"\t Avg batch Loss: {epoch_loss}")
+            print(f"\t Avg Sample Loss: {epoch_loss}")
             print(f"\t Accuracy: {accuracy}%")
             print(f"\t Micro F1 Score: {micro_f1_result}")
             print(f"\t Macro average F1 Score: {macro_f1_result}")
