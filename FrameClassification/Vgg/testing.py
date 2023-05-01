@@ -36,9 +36,9 @@ def testing(device,model,loss_fn,testloader,batch_size) :
                 pbar.set_postfix({'accuracy':accuracy})
                     
                 #add labels to a list for confusion matrix later
-                truth_labels.append(float(input_labels[0].to('cpu')))
-                predicted_label = torch.argmax(pred).to('cpu')
-                predicted_labels.append(float(predicted_label))
+                predicted_label = torch.argmax(pred, 1).to('cpu')
+                predicted_labels.extend(predicted_label)
+                truth_labels.extend(input_labels.to('cpu'))
                 
     test_loss /= num_batches
     correct /= n_test

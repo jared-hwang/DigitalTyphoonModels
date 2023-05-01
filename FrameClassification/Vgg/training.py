@@ -1,7 +1,7 @@
 from tqdm import tqdm
 from testing import *
 
-def training(device,model,loss_fn,optimizer,trainloader,testloader,batch_size,epochs) -> float:
+def training(device,model,loss_fn,optimizer,trainloader,testloader,batch_size,epochs):
     t=1
     accuracy=0
     
@@ -31,7 +31,7 @@ def training(device,model,loss_fn,optimizer,trainloader,testloader,batch_size,ep
                 #print loss in pbar every 100 batch
                 #if batch % 100 == 0 :
                 loss= loss.item()
-                pbar.set_postfix({"loss":loss})
+                if batch_num % 10 == 0 : pbar.set_postfix({"loss":loss})
                 
         
         print(f"    Training done !")
