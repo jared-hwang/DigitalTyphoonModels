@@ -58,6 +58,7 @@ def train(model, trainloader, testloader, optimizer, criterion, max_epochs,
     log_string = ''
     epoch_losses = []
     validation_losses = []
+    validation_accs = []
 
     model.train()
 
@@ -73,10 +74,12 @@ def train(model, trainloader, testloader, optimizer, criterion, max_epochs,
         log_string += f"Epoch {epoch + 1} \n \t loss: {epoch_loss} \n \t acc: {epoch_acc} \n"
         epoch_losses.append(epoch_loss)
 
-        validation_loss = validate(model, testloader, criterion, device, None, savepath, save_results=False, num_classes=5)
-        print(f'\t Validation loss: {validation_loss}')
-        log_string += f'Validation loss: {validation_loss} \n'
+        validation_loss, validation_acc = validate(model, testloader, criterion, device, None, savepath, save_results=False, num_classes=5)
+        print(f'\t Validation loss: {validation_loss}'
+              f'\t Validation acc: {validation_acc}')
+        log_string += f'Validation loss: {validation_loss} \n Validation acc: {validation_acc}'
         validation_losses.append(validation_loss)
+        validation_accs.append(validation_acc)
 
         # Checkpoint
         torch.save({
@@ -89,8 +92,9 @@ def train(model, trainloader, testloader, optimizer, criterion, max_epochs,
             if early_stopper.early_stop(validation_loss):
                 break
 
-        print("Epoch losses: ", epoch_losses)
-        print("Validation losses: ", validation_losses)
+    print("Epoch losses: ", epoch_losses)
+    print("Validation losses: ", validation_losses)
+    print("Validation accs: ", validation_accs)
 
     return log_string
 
@@ -130,7 +134,7 @@ def validate(model, testloader, criterion, device, timestring, savepath, save_re
         accuracy = 100 * accuracy_score(truth_labels, predicted_labels)
 
         if not save_results:
-            return epoch_loss
+            return epoch_loss, accuracy
         else:
             # Build confusion matrix
             cf_matrix = confusion_matrix(truth_labels, predicted_labels)
