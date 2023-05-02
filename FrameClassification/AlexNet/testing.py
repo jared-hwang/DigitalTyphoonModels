@@ -1,11 +1,11 @@
 import torch
 import torch.nn as nn
-from torchvision.models import alexnet
+from torchvision.models import alexnet, vit_b_16
 from tqdm import tqdm
 
 from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
 
-device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 print('device used: ', device)
 
 def filter(image):
@@ -31,7 +31,7 @@ train, test = dataset_obj.random_split([train_part, 1 - train_part], split_by='f
 print('%d images loaded in the test_set'% len(test.indices))
 
 
-test_loader = torch.utils.data.DataLoader(train, batch_size=16,
+test_loader = torch.utils.data.DataLoader(test, batch_size=16,
                                            shuffle=True, num_workers=8)
 
 # Define mean and std for standardization
@@ -39,15 +39,18 @@ mean = 269.5767
 std = 34.3959
 
 # Instantiate the network
-net = alexnet(num_classes=8)
-net.features[0]= nn.Conv2d(1,64,kernel_size=11,stride=4,padding=2)
+# net = alexnet(num_classes=8)
+# net.features[0]= nn.Conv2d(1,64,kernel_size=11,stride=4,padding=2)
+net = vit_b_16(num_classes=8)
+patch_size = 16
+net.conv_proj = nn.Conv2d(in_channels=1, out_channels=768, kernel_size=patch_size, stride=patch_size)
 net = net.to(device)
 
 all_confusion_matrices = torch.zeros(100, 8, 8, dtype=int)
 
 # Test the network
 print('Start testing')
-for epoch in range(100):
+for epoch in range(2, 100):
     PATH = 'net_0.80_tmp%d.pth'% epoch
     net.load_state_dict(torch.load(PATH))
     net.eval()
@@ -58,10 +61,13 @@ for epoch in range(100):
     print('testing ', PATH)
     with tqdm(test_loader, dynamic_ncols=True) as pbar:
         for i, data in enumerate(pbar, 0):
+            if i==500:
+                break
             inputs, labels = data
             inputs = ((inputs - mean) / std).float()
             assert not torch.any(torch.isnan(inputs))
             inputs = inputs.reshape(inputs.shape[0], 1, 512, 512).to(device)
+            inputs = nn.functional.interpolate(inputs, size=(224, 224), mode='bilinear', align_corners=False)
             labels = labels.to(device)
 
             # Prediction
@@ -78,8 +84,8 @@ for epoch in range(100):
                 all_confusion_matrices[epoch, true_label, pred_label] += 1
 
     # Results
-    print('Accuracy of the network with %d epochs on %d %% of test images: %d %%' %
-        (epoch, 1-train_part, 100 * correct / total))
+    print('Accuracy of the network with %d epochs on %d%% of test images: %d %%' %
+        (epoch, (1-train_part)*100, 100 * correct / total))
     print('confusion matrix :\n', all_confusion_matrices[epoch].int())
 
     # Saves
