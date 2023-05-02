@@ -53,40 +53,30 @@ def train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, sav
     return epoch_loss, epoch_acc
 
 
-def train(model, trainloader, optimizer, criterion,
-          epochs, device, savepath):
+def train(model, trainloader, testloader, optimizer, criterion, max_epochs,
+          device, savepath, autostop=(3, 0.03)):
     log_string = ''
+    epoch_losses = []
+    validation_losses = []
+
     model.train()
 
-    for epoch in range(epochs):
-        epoch_loss, epoch_acc = train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, savepath)
-        print(f"\t Average Sample Loss: {epoch_loss}")
-        print(f"\t Accuracy: {epoch_acc}%")
-        log_string += f"Epoch {epoch + 1} \n \t loss: {epoch_loss} \n \t acc: {epoch_acc} \n"
+    if autostop is not None:
+        early_stopper = EarlyStopper(patience=autostop[0], min_delta=autostop[1])
+    else:
+        early_stopper = None
 
-        # Checkpoint
-        torch.save({
-            'epoch': epoch + 1,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-        }, str(savepath / 'saved_models' / f'model_checkpoint_epoch{epoch + 1}.pt'))
-
-    return log_string
-
-def train_autostop(model, trainloader, testloader, optimizer, criterion, max_epochs, device, savepath):
-    log_string = ''
-    model.train()
-
-    early_stopper = EarlyStopper(patience=3, min_delta=0.03)
     for epoch in np.arange(max_epochs):
         epoch_loss, epoch_acc = train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, savepath)
         print(f"\t Avg Sample Loss: {epoch_loss}")
         print(f"\t Accuracy: {epoch_acc}%")
         log_string += f"Epoch {epoch + 1} \n \t loss: {epoch_loss} \n \t acc: {epoch_acc} \n"
+        epoch_losses.append(epoch_loss)
 
         validation_loss = validate(model, testloader, criterion, device, None, savepath, save_results=False, num_classes=5)
         print(f'\t Validation loss: {validation_loss}')
         log_string += f'Validation loss: {validation_loss} \n'
+        validation_losses.append(validation_loss)
 
         # Checkpoint
         torch.save({
@@ -95,8 +85,12 @@ def train_autostop(model, trainloader, testloader, optimizer, criterion, max_epo
             'optimizer_state_dict': optimizer.state_dict(),
         }, str(savepath / 'saved_models' / f'model_checkpoint_epoch{epoch + 1}.pt'))
 
-        if early_stopper.early_stop(validation_loss):
-            break
+        if early_stopper is not None:
+            if early_stopper.early_stop(validation_loss):
+                break
+
+        print("Epoch losses: ", epoch_losses)
+        print("Validation losses: ", validation_losses)
 
     return log_string
 
