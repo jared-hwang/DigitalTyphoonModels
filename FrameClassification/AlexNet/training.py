@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchvision.models import alexnet
+from torchvision.models import alexnet, vit_b_16
 from tqdm import tqdm
 
 from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
@@ -39,8 +39,12 @@ mean = 269.5767
 std = 34.3959
 
 # Instantiate the network and define the loss function and optimizer
-net = alexnet(num_classes=8)
-net.features[0]= nn.Conv2d(1,64,kernel_size=11,stride=4,padding=2)
+net = vit_b_16(num_classes=8)
+patch_size = 16
+net.conv_proj = nn.Conv2d(in_channels=1, out_channels=768, kernel_size=patch_size, stride=patch_size)
+
+
+# net.features[0]= nn.Conv2d(1,64,kernel_size=11,stride=4,padding=2)
 net = net.to(device)
 
 criterion = nn.CrossEntropyLoss()
@@ -53,10 +57,13 @@ for epoch in range(100):
     running_loss = 0.0
     with tqdm(train_loader, dynamic_ncols=True) as pbar:
         for i, data in enumerate(pbar, 0):
+            if i==500:
+                break
             inputs, labels = data
             inputs = ((inputs - mean) / std).float()
             assert not torch.any(torch.isnan(inputs))
             inputs = inputs.reshape(inputs.shape[0], 1, 512, 512).to(device)
+            inputs = nn.functional.interpolate(inputs, size=(224, 224), mode='bilinear', align_corners=False)
             labels = labels.to(device)
 
             optimizer.zero_grad()
@@ -75,10 +82,12 @@ for epoch in range(100):
             else:
                 pbar.set_postfix({'loss': running_loss/(i%2000)})
 
+    if loss.isnan():
+        break
     # Save the current model
-    PATH = 'net_%0.2f_tmp%d.pth'% (train_part, epoch)
+    PATH = 'net_%0.2f_500_tmp%d.pth'% (train_part, epoch)
     print(PATH)
     torch.save(net.state_dict(), PATH)
-    print("model saved with %d epochs and trained with %0.2f%% of the images"% (epoch, train_part))
+    print("model saved with %d epochs and trained with %d%% of the images"% (epoch, train_part*100))
 
 print('Finished Training')
