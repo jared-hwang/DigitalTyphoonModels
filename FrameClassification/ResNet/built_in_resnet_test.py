@@ -42,7 +42,7 @@ torch.manual_seed(SEED)
 # Create the model
 num_epochs = 50
 batch_size = 16
-learning_rate = 0.1
+learning_rate = 0.001
 num_workers = 8
 
 start_time_str = str(datetime.datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
@@ -53,7 +53,7 @@ model.fc = nn.Linear(in_features=512, out_features=8, bias=True)
 model = model.to(device)
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
 
 def image_filter(image):
     return image.grade() < 7
