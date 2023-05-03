@@ -68,7 +68,7 @@ def train(model, trainloader, testloader, optimizer, criterion, max_epochs,
         # Train one epoch
         epoch_loss, epoch_acc = train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, logger=logger)
         logger.print(f"\t Avg batch Loss: {epoch_loss} \n \t Accuracy: {epoch_acc}%")
-        logger.log(f"Epoch {epoch + 1} \n \t loss: {epoch_loss} \n \t acc: {epoch_acc}")
+        logger.log(f"\n Epoch {epoch + 1} \n \t loss: {epoch_loss} \n \t acc: {epoch_acc}")
         epoch_losses.append(epoch_loss)
 
         # Run evaluation
@@ -90,6 +90,7 @@ def train(model, trainloader, testloader, optimizer, criterion, max_epochs,
                 break
 
     logger.print(f'Epoch Losses: {epoch_losses} \n Validation losses: {validation_losses} \n Validation accuracies: {validation_accs}')
+    logger.log(f'Epoch Losses: {epoch_losses} \n Validation losses: {validation_losses} \n Validation accuracies: {validation_accs}')
     return log_string
 
 def validate(model, testloader, criterion, device, timestring, savepath, save_results=False, num_classes=5, logger=None):

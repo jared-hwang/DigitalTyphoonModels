@@ -12,7 +12,6 @@ from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
 from accelerate import Accelerator
 
 accelerator = Accelerator()
-device = accelerator.device
 
 # Create the model
 num_epochs = 100
@@ -25,7 +24,6 @@ start_time_str = str(datetime.datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
 model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', weights=None)
 model.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
 model.fc = nn.Linear(in_features=512, out_features=8, bias=True)
-model.to(device)
 
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
@@ -72,8 +70,8 @@ for epoch in range(num_epochs):
     for batch_num, data in enumerate(tqdm(trainloader)):
         optimizer.zero_grad()
         inputs, targets = data
-        inputs, targets = torch.Tensor(inputs).float(), torch.Tensor(targets).long()
         inputs = torch.reshape(inputs, [inputs.size()[0], 1, inputs.size()[1], inputs.size()[2]])
+
         outputs = model(inputs)
         loss = criterion(outputs, targets)
         accelerator.backward(loss)
