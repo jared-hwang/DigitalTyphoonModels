@@ -34,7 +34,6 @@ save_path = Path('/DigitalTyphoonModels/FrameClassification/ResNet/accelerate_lo
 images_path = str(data_path / 'image') + '/'
 track_path = str(data_path / 'track') + '/'
 metadata_path = str(data_path / 'metadata.json')
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def image_filter(image):
     return image.grade() < 7
@@ -44,7 +43,7 @@ dataset = DigitalTyphoonDataset(str(images_path),
                                 str(track_path),
                                 str(metadata_path),
                                 'grade',
-                                load_data_into_memory=True,
+                                load_data_into_memory='all_data',
                                 filter_func=image_filter,
                                 verbose=False)
 
@@ -71,7 +70,6 @@ for epoch in range(num_epochs):
         optimizer.zero_grad()
         inputs, targets = data
         inputs = torch.reshape(inputs, [inputs.size()[0], 1, inputs.size()[1], inputs.size()[2]])
-
         outputs = model(inputs)
         loss = criterion(outputs, targets)
         accelerator.backward(loss)
