@@ -72,6 +72,8 @@ for epoch in range(num_epochs):
     for batch_num, data in enumerate(tqdm(trainloader)):
         optimizer.zero_grad()
         inputs, targets = data
+        inputs, targets = torch.Tensor(inputs).float(), torch.Tensor(targets).long()
+        inputs = torch.reshape(inputs, [inputs.size()[0], 1, inputs.size()[1], inputs.size()[2]])
         outputs = model(inputs)
         loss = criterion(outputs, targets)
         accelerator.backward(loss)
