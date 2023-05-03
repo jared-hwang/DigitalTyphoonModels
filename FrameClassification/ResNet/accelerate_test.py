@@ -18,7 +18,7 @@ device = accelerator.device
 num_epochs = 100
 batch_size = 16
 learning_rate = 0.001
-num_workers = 8
+num_workers = 0
 split_by = 'sequence'
 
 start_time_str = str(datetime.datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
