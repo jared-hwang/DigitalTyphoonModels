@@ -35,7 +35,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Create the model
 num_epochs = 100
-batch_size = 32
+batch_size = 16
 learning_rate = 0.01
 num_workers = 8
 
