@@ -4,6 +4,7 @@ import argparse
 import torch
 import torch.nn as nn
 from pathlib import Path
+import numpy as np
 
 from train_utils import train, validate, Logger
 from torch.utils.data import DataLoader
@@ -53,14 +54,19 @@ optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 def image_filter(image):
     return image.grade() < 7
 
+def transform_func(image_ray):
+    image_ray = np.clip(image_ray, 200, 330)
+    image_ray = (image_ray - 200) / (330 - 200)
+    return image_ray
+
 dataset = DigitalTyphoonDataset(str(images_path),
                                 str(track_path),
                                 str(metadata_path),
                                 'grade',
                                 load_data_into_memory=load_data,
                                 filter_func=image_filter,
+                                transform_func=transform_func,
                                 verbose=False)
-print(len(dataset))
 
 if use_small:
     train_set, test_set, _ = dataset.random_split([0.001, 0.001, 0.998], split_by=args.split_by)
