@@ -37,7 +37,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # Create the model
 num_epochs = 100
 batch_size = 16
-learning_rate = 0.01
+learning_rate = 0.0001
 num_workers = 8
 
 model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', weights=None)
@@ -54,6 +54,7 @@ optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 def image_filter(image):
     return image.grade() < 7
 
+transform_func = None
 def transform_func(image_ray):
     image_ray = np.clip(image_ray, 200, 330)
     image_ray = (image_ray - 200) / (330 - 200)
@@ -81,8 +82,12 @@ logger.log(f'Start time: {start_time_str} \n '
            f'Batch size: {batch_size} \n'
            f'Learning rate: {learning_rate} \n '
            f'Split by: {args.split_by} \n'
-           f'Autostop: {args.autostop} \n')
+           f'Autostop: {args.autostop} \n'
+           f'Normalized: {True if transform_func is not None else False}')
 
+initial_val_loss, initial_val_acc = validate(model, testloader, criterion, device, start_time_str, save_path, num_classes=5, save_results=False, logger=logger)
+logger.print(f"\n\t Val loss: {initial_val_loss} \t Val acc: {initial_val_acc}")
+logger.log(f"Initial Val Loss: {initial_val_loss} \t Initial Val Acc: {initial_val_acc}")
 
 if args.autostop:
     train(model, trainloader, testloader, optimizer, criterion, args.maxepochs, device, save_path, autostop=True, autostop_parameters=(3, 0.3), logger=logger)
