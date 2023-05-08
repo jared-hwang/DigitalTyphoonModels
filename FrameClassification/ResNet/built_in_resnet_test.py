@@ -37,7 +37,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # Create the model
 num_epochs = 100
 batch_size = 16
-learning_rate = 0.0001
+learning_rate = 0.001
 num_workers = 8
 
 model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', weights=None)
@@ -47,7 +47,7 @@ model = model.to(device)
 
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
 
 
 # Open the dataset
@@ -56,8 +56,11 @@ def image_filter(image):
 
 transform_func = None
 def transform_func(image_ray):
-    image_ray = np.clip(image_ray, 200, 330)
-    image_ray = (image_ray - 200) / (330 - 200)
+    image_ray = np.clip(image_ray, 150, 350)
+    image_ray = (image_ray - 150) / (350 - 150)
+    image_ray = torch.Tensor(image_ray)
+    image_ray = nn.functional.interpolate(image_ray, size=(224, 224), mode='bilinear', align_corners=False)
+    image_ray = image_ray.numpy()
     return image_ray
 
 dataset = DigitalTyphoonDataset(str(images_path),
