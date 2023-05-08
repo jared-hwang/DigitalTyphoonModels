@@ -74,7 +74,7 @@ def main():
                                       track_path, 
                                       metadata_path,
                                       'grade',
-                                      split_dataset_by='frame',
+                                      split_dataset_by='sequence',
                                       get_images_by_sequence=False,
                                       load_data_into_memory='all_data',
                                       ignore_list=[],
