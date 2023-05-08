@@ -12,11 +12,12 @@ from sklearn.metrics import f1_score, confusion_matrix, accuracy_score
 from torchvision import datasets, transforms, models
 
 
-def train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, savepath):
+def train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, logger=None):
+    logger.print(f"Epoch: {epoch+1}")
     batches_per_epoch = len(trainloader)
-    num_train_samples = len(trainloader.dataset)
+
     model.train()
-    print(f"Epoch: {epoch + 1}")
+
     train_running_loss = 0.0
     train_running_correct = 0
     total = 0
@@ -47,36 +48,35 @@ def train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, sav
         optimizer.step()
 
     # Loss and accuracy for the complete epoch.
-    epoch_loss = train_running_loss / num_train_samples
+    epoch_loss = train_running_loss / batches_per_epoch
     epoch_acc = 100. * (train_running_correct / total)
 
     return epoch_loss, epoch_acc
 
 
 def train(model, trainloader, testloader, optimizer, criterion, max_epochs,
-          device, savepath, autostop=(3, 0.03)):
+          device, savepath, autostop=False, autostop_parameters=(3, 0.03), logger=None):
     log_string = ''
     epoch_losses = []
     validation_losses = []
+    validation_accs = []
 
-    model.train()
-
-    if autostop is not None:
-        early_stopper = EarlyStopper(patience=autostop[0], min_delta=autostop[1])
-    else:
-        early_stopper = None
+    early_stopper = EarlyStopper(patience=autostop_parameters[0], min_delta=autostop_parameters[1]) if autostop else None
 
     for epoch in np.arange(max_epochs):
-        epoch_loss, epoch_acc = train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, savepath)
-        print(f"\t Avg Sample Loss: {epoch_loss}")
-        print(f"\t Accuracy: {epoch_acc}%")
-        log_string += f"Epoch {epoch + 1} \n \t loss: {epoch_loss} \n \t acc: {epoch_acc} \n"
+
+        # Train one epoch
+        epoch_loss, epoch_acc = train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, logger=logger)
+        logger.print(f"\t Avg batch Loss: {epoch_loss} \n \t Accuracy: {epoch_acc}%")
+        logger.log(f"\n Epoch {epoch + 1} \n \t loss: {epoch_loss} \n \t acc: {epoch_acc}")
         epoch_losses.append(epoch_loss)
 
-        validation_loss = validate(model, testloader, criterion, device, None, savepath, save_results=False, num_classes=5)
-        print(f'\t Validation loss: {validation_loss}')
-        log_string += f'Validation loss: {validation_loss} \n'
+        # Run evaluation
+        validation_loss, validation_acc = validate(model, testloader, criterion, device, None, savepath, save_results=False, num_classes=5, logger=logger)
+        logger.print(f'\t Validation loss: {validation_loss} \n \t Validation acc: {validation_acc}')
+        logger.log(f'\t Validation loss: {validation_loss} \n \t Validation acc: {validation_acc}')
         validation_losses.append(validation_loss)
+        validation_accs.append(validation_acc)
 
         # Checkpoint
         torch.save({
@@ -89,16 +89,16 @@ def train(model, trainloader, testloader, optimizer, criterion, max_epochs,
             if early_stopper.early_stop(validation_loss):
                 break
 
-        print("Epoch losses: ", epoch_losses)
-        print("Validation losses: ", validation_losses)
-
+    logger.print(f'Epoch Losses: {epoch_losses} \n Validation losses: {validation_losses} \n Validation accuracies: {validation_accs}')
+    logger.log(f'Epoch Losses: {epoch_losses} \n Validation losses: {validation_losses} \n Validation accuracies: {validation_accs}')
     return log_string
 
-def validate(model, testloader, criterion, device, timestring, savepath, save_results=False, num_classes=5):
-    print('Validation')
+def validate(model, testloader, criterion, device, timestring, savepath, save_results=False, num_classes=5, logger=None):
+    logger.print('Validation')
+
     model.eval()
     valid_running_loss = 0.0
-    num_validate_samples = len(testloader.dataset)
+    num_batches = len(testloader)
 
     truth_labels = []
     predicted_labels = []
@@ -123,45 +123,61 @@ def validate(model, testloader, criterion, device, timestring, savepath, save_re
 
 
         # Loss and accuracy for the complete epoch.
-        epoch_loss = valid_running_loss / num_validate_samples
+        epoch_loss = valid_running_loss / num_batches
         micro_f1_result = f1_score(truth_labels, predicted_labels, average='micro')
         macro_f1_result = f1_score(truth_labels, predicted_labels, average='macro')
         weighted_f1_result = f1_score(truth_labels, predicted_labels, average='weighted')
         accuracy = 100 * accuracy_score(truth_labels, predicted_labels)
 
-        if not save_results:
-            return epoch_loss
-        else:
-            # Build confusion matrix
-            cf_matrix = confusion_matrix(truth_labels, predicted_labels)
-            df_cm = pd.DataFrame(cf_matrix, index=[i+2 for i in range(num_classes)],
-                                 columns=[i+2 for i in range(num_classes)])
+        if save_results:
+            cm = build_confusion_matrix(predicted_labels, truth_labels, num_classes, timestring, savepath)
+            validation_results_string = f'\t Avg Batch Loss: {epoch_loss} \n' \
+                                        f'\t Accuracy: {accuracy}% \n' \
+                                        f'Micro F1: {micro_f1_result} \n' \
+                                        f'Macro F1: {macro_f1_result} \n ' \
+                                        f'Weighted F1: {weighted_f1_result}'
+            logger.log('Validation: \n \t ' + validation_results_string)
+            logger.log(f'Confusion Matrix: \n \t {cm}')
+            logger.print(validation_results_string)
 
-            plt.figure(figsize=(12, 7))
-            sn.heatmap(df_cm, annot=True, fmt='g')
-            plt.savefig(str(savepath / 'logs' / f'resnet_confusion_matrix_{timestring}.png'))
+        return epoch_loss, accuracy
 
-            # Save normalized confusion matrix
-            plt.clf()
-            df_cm = pd.DataFrame(cf_matrix / np.sum(cf_matrix, axis=1)[:, None], index=[i+2 for i in range(num_classes)],
-                                 columns=[i+2 for i in range(num_classes)])
-            sn.heatmap(df_cm, annot=True, fmt='g')
-            plt.savefig(str(savepath / 'logs' / f'resnet_confusion_matrix_norm_{timestring}.png'))
+def build_confusion_matrix(predicted_labels, truth_labels, num_classes, timestring, savepath):
+    # Build confusion matrix
+    cf_matrix = confusion_matrix(truth_labels, predicted_labels)
+    df_cm = pd.DataFrame(cf_matrix, index=[i + 2 for i in range(num_classes)],
+                         columns=[i + 2 for i in range(num_classes)])
 
-            log_string = ''
-            log_string += f"Validation: \n \t loss: {epoch_loss} \n \t acc: {accuracy} \n \t micro_f1: {micro_f1_result} " \
-                          f"\n \t macro_f1: {macro_f1_result}\n \t weighted_f1: {weighted_f1_result}"
+    plt.figure(figsize=(12, 7))
+    sn.heatmap(df_cm, annot=True, fmt='g')
+    plt.savefig(str(savepath / 'logs' / f'resnet_confusion_matrix_{timestring}.png'))
 
-            print(f"\t Avg Sample Loss: {epoch_loss}")
-            print(f"\t Accuracy: {accuracy}%")
-            print(f"\t Micro F1 Score: {micro_f1_result}")
-            print(f"\t Macro average F1 Score: {macro_f1_result}")
-            print(f"\t Weighted average F1 Score: {weighted_f1_result}")
-            return log_string
+    # Save normalized confusion matrix
+    plt.clf()
+    df_cm = pd.DataFrame(cf_matrix / np.sum(cf_matrix, axis=1)[:, None], index=[i + 2 for i in range(num_classes)],
+                         columns=[i + 2 for i in range(num_classes)])
+    sn.heatmap(df_cm, annot=True, fmt='g')
+    plt.savefig(str(savepath / 'logs' / f'resnet_confusion_matrix_norm_{timestring}.png'))
 
+    return cf_matrix
+
+
+class Logger:
+    def __init__(self):
+        self.log_string = ''
+
+    def print(self, print_str):
+        print(print_str)
+
+    def log(self, log_str):
+        self.log_string += log_str + '\n'
+
+    def write(self, path):
+        with open(path, 'w') as writer:
+            writer.write(self.log_string)
 
 class EarlyStopper:
-    def __init__(self, patience=2, min_delta=0):
+    def __init__(self, patience=2, min_delta=0.):
         self.patience = patience
         self.min_delta = min_delta
         self.counter = 0
