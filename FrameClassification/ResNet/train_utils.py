@@ -167,6 +167,8 @@ class Logger:
         print(print_str)
 
     def log_json(self, epoch, key, val):
+        if epoch not in self.log_json_dict:
+            self.log_json_dict[epoch] = {}
         self.log_json_dict[epoch][key] = val
 
     def log(self, log_str):
