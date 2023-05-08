@@ -68,8 +68,8 @@ def train(model, trainloader, testloader, optimizer, criterion, max_epochs,
         # Train one epoch
         epoch_loss, epoch_acc = train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, logger=logger)
         logger.print(f"\t Avg batch Loss: {epoch_loss} \n \t Accuracy: {epoch_acc}%")
-        logger.log_json(epoch, 'train_loss', int(epoch_loss))
-        logger.log_json(epoch, 'train_acc', int(epoch_acc))
+        logger.log_json(epoch, 'train_loss', float(epoch_loss))
+        logger.log_json(epoch, 'train_acc', float(epoch_acc))
         logger.log(f"\n Epoch {epoch + 1} \n \t loss: {epoch_loss} \n \t acc: {epoch_acc}")
         epoch_losses.append(epoch_loss)
 
@@ -92,9 +92,9 @@ def train(model, trainloader, testloader, optimizer, criterion, max_epochs,
                 break
 
     logger.print(f'Epoch Losses: {epoch_losses} \n Validation losses: {validation_losses} \n Validation accuracies: {validation_accs}')
-    logger.log_json('meta', 'epoch_losses', [int(val) for val in epoch_losses])
-    logger.log_json('meta', 'validation_losses', [int(val) for val in validation_losses])
-    logger.log_json('meta', 'validation_accs', [int(val) for val in validation_accs])
+    logger.log_json('meta', 'epoch_losses', [float(val) for val in epoch_losses])
+    logger.log_json('meta', 'validation_losses', [float(val) for val in validation_losses])
+    logger.log_json('meta', 'validation_accs', [float(val) for val in validation_accs])
     logger.log(f'Epoch Losses: {epoch_losses} \n Validation losses: {validation_losses} \n Validation accuracies: {validation_accs}')
     return log_string
 
@@ -147,12 +147,12 @@ def validate(model, testloader, criterion, device, timestring, savepath, log_res
 
             logger.log('Validation: \n \t ' + validation_results_string)
             logger.log(f'{cm}')
-            logger.log_json(log_results, 'val_loss', int(epoch_loss))
-            logger.log_json(log_results, 'val_acc', int(accuracy))
-            logger.log_json(log_results, 'val_microf1', int(micro_f1_result))
-            logger.log_json(log_results, 'val_macrof1', int(macro_f1_result))
-            logger.log_json(log_results, 'val_weightedf1', int(weighted_f1_result))
-            logger.log_json(log_results, 'val_weightedf1', int(weighted_f1_result))
+            logger.log_json(log_results, 'val_loss', float(epoch_loss))
+            logger.log_json(log_results, 'val_acc', float(accuracy))
+            logger.log_json(log_results, 'val_microf1', float(micro_f1_result))
+            logger.log_json(log_results, 'val_macrof1', float(macro_f1_result))
+            logger.log_json(log_results, 'val_weightedf1', float(weighted_f1_result))
+            logger.log_json(log_results, 'val_weightedf1', float(weighted_f1_result))
             logger.log_json(log_results, 'confusion_matrix', cm.tolist())
 
         return epoch_loss, accuracy
