@@ -35,7 +35,7 @@ metadata_path = str(data_path / 'metadata.json')
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Create the model
-num_epochs = 20
+num_epochs = 1
 batch_size = 16
 learning_rate = 0.0001
 num_workers = 8
