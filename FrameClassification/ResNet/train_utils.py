@@ -128,16 +128,18 @@ def validate(model, testloader, criterion, device, timestring, savepath, save_re
         macro_f1_result = f1_score(truth_labels, predicted_labels, average='macro')
         weighted_f1_result = f1_score(truth_labels, predicted_labels, average='weighted')
         accuracy = 100 * accuracy_score(truth_labels, predicted_labels)
+        cm = build_confusion_matrix(predicted_labels, truth_labels, num_classes, timestring, savepath)
+        logger.print(f'\t Validation macro_f1: {macro_f1_result}')
+        logger.print(f'\t CM: {cm}')
 
         if save_results:
-            cm = build_confusion_matrix(predicted_labels, truth_labels, num_classes, timestring, savepath)
             validation_results_string = f'\t Avg Batch Loss: {epoch_loss} \n' \
                                         f'\t Accuracy: {accuracy}% \n' \
                                         f'Micro F1: {micro_f1_result} \n' \
                                         f'Macro F1: {macro_f1_result} \n ' \
                                         f'Weighted F1: {weighted_f1_result}'
             logger.log('Validation: \n \t ' + validation_results_string)
-            logger.log(f'Confusion Matrix: \n \t {cm}')
+            logger.log(f'{cm}')
             logger.print(validation_results_string)
 
         return epoch_loss, accuracy

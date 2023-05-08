@@ -35,9 +35,9 @@ metadata_path = str(data_path / 'metadata.json')
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Create the model
-num_epochs = 100
-batch_size = 16
-learning_rate = 0.001
+num_epochs = 20
+batch_size = 32
+learning_rate = 0.0001
 num_workers = 8
 
 model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', weights=None)
@@ -59,7 +59,9 @@ def transform_func(image_ray):
     image_ray = np.clip(image_ray, 150, 350)
     image_ray = (image_ray - 150) / (350 - 150)
     image_ray = torch.Tensor(image_ray)
+    image_ray = torch.reshape(image_ray, [1, 1, image_ray.size()[0], image_ray.size()[1]])
     image_ray = nn.functional.interpolate(image_ray, size=(224, 224), mode='bilinear', align_corners=False)
+    image_ray = torch.reshape(image_ray, [image_ray.size()[2], image_ray.size()[3]])
     image_ray = image_ray.numpy()
     return image_ray
 

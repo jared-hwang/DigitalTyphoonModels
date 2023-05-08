@@ -16,7 +16,7 @@ accelerator = Accelerator()
 # Create the model
 num_epochs = 100
 batch_size = 16
-learning_rate = 0.001
+learning_rate = 0.01
 num_workers = 0
 split_by = 'sequence'
 
@@ -66,10 +66,12 @@ model, optimizer, training_dataloader = accelerator.prepare(
 )
 
 for epoch in range(num_epochs):
+    print(f"Epoch: {epoch}")
     for batch_num, data in enumerate(tqdm(trainloader)):
         optimizer.zero_grad()
         inputs, targets = data
-        inputs = torch.reshape(inputs, [inputs.size()[0], 1, inputs.size()[1], inputs.size()[2]])
+        inputs = torch.reshape(inputs, [inputs.size()[0], 1, inputs.size()[1], inputs.size()[2]]).float().cuda()
+        targets = targets.long().cuda()
         outputs = model(inputs)
         loss = criterion(outputs, targets)
         accelerator.backward(loss)
