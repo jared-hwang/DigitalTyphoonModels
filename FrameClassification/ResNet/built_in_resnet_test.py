@@ -90,7 +90,16 @@ logger.log(f'Start time: {start_time_str} \n '
            f'Autostop: {args.autostop} \n'
            f'Normalized: {True if transform_func is not None else False}')
 
-initial_val_loss, initial_val_acc = validate(model, testloader, criterion, device, start_time_str, save_path, num_classes=5, save_results=False, logger=logger)
+logger.log_json('meta', 'start_time', start_time_str)
+logger.log_json('meta', 'num_max_epochs', num_epochs)
+logger.log_json('meta', 'batch_size', batch_size)
+logger.log_json('meta', 'lr', learning_rate)
+logger.log_json('meta', 'split_by', args.split_by)
+logger.log_json('meta', 'autostop', args.autostop)
+logger.log_json('meta', 'standardized', True if transform_func is not None else False)
+
+
+initial_val_loss, initial_val_acc = validate(model, testloader, criterion, device, start_time_str, save_path, num_classes=5, log_results=-1, logger=logger)
 logger.print(f"\n\t Val loss: {initial_val_loss} \t Val acc: {initial_val_acc}")
 logger.log(f"Initial Val Loss: {initial_val_loss} \t Initial Val Acc: {initial_val_acc}")
 
@@ -99,9 +108,10 @@ if args.autostop:
 else:
     train(model, trainloader, testloader, optimizer, criterion, num_epochs, device, save_path, autostop=None, logger=logger)
 
-validate(model, testloader, criterion, device, start_time_str, save_path, num_classes=5, save_results=True, logger=logger)
+validate(model, testloader, criterion, device, start_time_str, save_path, num_classes=5, log_results=num_epochs-1, logger=logger)
 
 torch.save(model.state_dict(), str(save_path / 'saved_models' / f'built_in_resnet_weights_{start_time_str}.pt'))
-
 logger.write(str(save_path / 'logs' / f'log_{start_time_str}.txt'))
+logger.write_json(str(save_path / 'logs' / f'log_{start_time_str}.json'))
+
 

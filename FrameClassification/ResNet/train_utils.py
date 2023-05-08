@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import seaborn as sn
 from sklearn.metrics import f1_score, confusion_matrix, accuracy_score
 from torchvision import datasets, transforms, models
-
+import json
 
 def train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, logger=None):
     logger.print(f"Epoch: {epoch+1}")
@@ -68,11 +68,13 @@ def train(model, trainloader, testloader, optimizer, criterion, max_epochs,
         # Train one epoch
         epoch_loss, epoch_acc = train_one_epoch(model, trainloader, optimizer, criterion, epoch, device, logger=logger)
         logger.print(f"\t Avg batch Loss: {epoch_loss} \n \t Accuracy: {epoch_acc}%")
+        logger.log_json(epoch, 'train_loss', epoch_loss)
+        logger.log_json(epoch, 'train_acc', epoch_acc)
         logger.log(f"\n Epoch {epoch + 1} \n \t loss: {epoch_loss} \n \t acc: {epoch_acc}")
         epoch_losses.append(epoch_loss)
 
         # Run evaluation
-        validation_loss, validation_acc = validate(model, testloader, criterion, device, None, savepath, save_results=False, num_classes=5, logger=logger)
+        validation_loss, validation_acc = validate(model, testloader, criterion, device, None, savepath, log_results=epoch, num_classes=5, logger=logger)
         logger.print(f'\t Validation loss: {validation_loss} \n \t Validation acc: {validation_acc}')
         logger.log(f'\t Validation loss: {validation_loss} \n \t Validation acc: {validation_acc}')
         validation_losses.append(validation_loss)
@@ -90,10 +92,13 @@ def train(model, trainloader, testloader, optimizer, criterion, max_epochs,
                 break
 
     logger.print(f'Epoch Losses: {epoch_losses} \n Validation losses: {validation_losses} \n Validation accuracies: {validation_accs}')
+    logger.log_json('meta', 'epoch_losses', epoch_losses)
+    logger.log_json('meta', 'validation_losses', validation_losses)
+    logger.log_json('meta', 'validation_accs', validation_accs)
     logger.log(f'Epoch Losses: {epoch_losses} \n Validation losses: {validation_losses} \n Validation accuracies: {validation_accs}')
     return log_string
 
-def validate(model, testloader, criterion, device, timestring, savepath, save_results=False, num_classes=5, logger=None):
+def validate(model, testloader, criterion, device, timestring, savepath, log_results=None, num_classes=5, logger=None):
     logger.print('Validation')
 
     model.eval()
@@ -128,48 +133,41 @@ def validate(model, testloader, criterion, device, timestring, savepath, save_re
         macro_f1_result = f1_score(truth_labels, predicted_labels, average='macro')
         weighted_f1_result = f1_score(truth_labels, predicted_labels, average='weighted')
         accuracy = 100 * accuracy_score(truth_labels, predicted_labels)
-        cm = build_confusion_matrix(predicted_labels, truth_labels, num_classes, timestring, savepath)
-        logger.print(f'\t Validation macro_f1: {macro_f1_result}')
-        logger.print(f'\t CM: {cm}')
 
-        if save_results:
+        if log_results is not None:
+            cm = confusion_matrix(truth_labels, predicted_labels)
+            logger.print(f'\t Validation macro_f1: {macro_f1_result}')
+            logger.print(f'\t CM: {cm}')
             validation_results_string = f'\t Avg Batch Loss: {epoch_loss} \n' \
                                         f'\t Accuracy: {accuracy}% \n' \
                                         f'Micro F1: {micro_f1_result} \n' \
                                         f'Macro F1: {macro_f1_result} \n ' \
                                         f'Weighted F1: {weighted_f1_result}'
-            logger.log('Validation: \n \t ' + validation_results_string)
-            logger.log(f'{cm}')
             logger.print(validation_results_string)
 
+            logger.log('Validation: \n \t ' + validation_results_string)
+            logger.log(f'{cm}')
+            logger.log_json(log_results, 'val_loss', epoch_loss)
+            logger.log_json(log_results, 'val_acc', accuracy)
+            logger.log_json(log_results, 'val_microf1', micro_f1_result)
+            logger.log_json(log_results, 'val_macrof1', macro_f1_result)
+            logger.log_json(log_results, 'val_weightedf1', weighted_f1_result)
+            logger.log_json(log_results, 'val_weightedf1', weighted_f1_result)
+            logger.log_json(log_results, 'confusion_matrix', cm)
+
         return epoch_loss, accuracy
-
-def build_confusion_matrix(predicted_labels, truth_labels, num_classes, timestring, savepath):
-    # Build confusion matrix
-    cf_matrix = confusion_matrix(truth_labels, predicted_labels)
-    df_cm = pd.DataFrame(cf_matrix, index=[i + 2 for i in range(num_classes)],
-                         columns=[i + 2 for i in range(num_classes)])
-
-    plt.figure(figsize=(12, 7))
-    sn.heatmap(df_cm, annot=True, fmt='g')
-    plt.savefig(str(savepath / 'logs' / f'resnet_confusion_matrix_{timestring}.png'))
-
-    # Save normalized confusion matrix
-    plt.clf()
-    df_cm = pd.DataFrame(cf_matrix / np.sum(cf_matrix, axis=1)[:, None], index=[i + 2 for i in range(num_classes)],
-                         columns=[i + 2 for i in range(num_classes)])
-    sn.heatmap(df_cm, annot=True, fmt='g')
-    plt.savefig(str(savepath / 'logs' / f'resnet_confusion_matrix_norm_{timestring}.png'))
-
-    return cf_matrix
 
 
 class Logger:
     def __init__(self):
         self.log_string = ''
+        self.log_json_dict = {}
 
     def print(self, print_str):
         print(print_str)
+
+    def log_json(self, epoch, key, val):
+        self.log_json_dict[epoch][key] = val
 
     def log(self, log_str):
         self.log_string += log_str + '\n'
@@ -177,6 +175,11 @@ class Logger:
     def write(self, path):
         with open(path, 'w') as writer:
             writer.write(self.log_string)
+
+    def write_json(self, path):
+        with open('json_data.json', 'w') as outfile:
+            json.dump(self.log_json_dict, outfile)
+
 
 class EarlyStopper:
     def __init__(self, patience=2, min_delta=0.):
