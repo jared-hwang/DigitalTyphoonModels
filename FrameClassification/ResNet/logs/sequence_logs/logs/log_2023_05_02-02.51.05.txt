@@ -1,0 +1,36 @@
+Start time: 2023_05_02-02.50.55 
+Num/max epochs: 50 
+Batch size: 16 
+Learning rate: 0.001 
+ Split by: sequence 
+Autostop: True 
+Epoch 1 
+ 	 loss: 0.0598212035108106 
+ 	 acc: 58.65141632377651 
+Validation loss: 0.1385111604401952 
+Epoch 2 
+ 	 loss: 0.04592059687953608 
+ 	 acc: 67.9709723085879 
+Validation loss: 0.055741192980377975 
+Epoch 3 
+ 	 loss: 0.04140218916146875 
+ 	 acc: 71.43074500879828 
+Validation loss: 0.08485868818747709 
+Epoch 4 
+ 	 loss: 0.037421094575924976 
+ 	 acc: 74.46118836246247 
+Validation loss: 0.2363026842262847 
+Epoch 5 
+ 	 loss: 0.03348351718663125 
+ 	 acc: 77.49758543587843 
+Validation loss: 0.33325987107495136 
+Epoch 6 
+ 	 loss: 0.029259389490136567 
+ 	 acc: 80.72450154135188 
+Validation loss: 0.2428001187965729 
+Validation: 
+ 	 loss: 0.2428001187965729 
+ 	 acc: 35.31226109192524 
+ 	 micro_f1: 0.35312261091925234 
+ 	 macro_f1: 0.27375711902668576
+ 	 weighted_f1: 0.2800143933477794
