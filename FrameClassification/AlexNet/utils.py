@@ -4,7 +4,6 @@ import torch
 import matplotlib.pyplot as plt
 import seaborn as sn
 import os
-from sklearn.metrics import precision_recall_fscore_support
 import numpy as np
 
 def compute_acc(cm):
@@ -79,15 +78,26 @@ def matrix_from_path(cm_path):
     return torch.load(cm_path)
 
 def main():
-    resnet_path = '/home/results_vuillod/models_05_03/resnet/'
-    # resnet_acc_list = compute_all_acc(resnet_path + 'confusion_matrix_', 100)
-    # acc_graph(resnet_acc_list, resnet_path)
-    # all_resnet_cm = matrices_iterate('/home/results_vuillod/models_05_03/resnet/')
-    # generate_heatmaps(all_resnet_cm, '/home/results_vuillod/tmp/')
-    cm = matrix_from_path(cm_str(resnet_path, 99))
-    generate_table(cm)
+    # vgg_path = '/home/results_vuillod/models_05_03/vgg/'
+    # all_vgg_cm = matrices_iterate(vgg_path)
+    # vgg_acc_list = compute_all_acc(all_vgg_cm)
+    # plt.plot(range(len(vgg_acc_list)), vgg_acc_list, label='vgg')
 
-    pass
+    resnet_path = '/home/results_vuillod/models_05_09/resnet18/'
+    all_resnet_cm = matrices_iterate(resnet_path)
+    resnet_acc_list = compute_all_acc(all_resnet_cm)
+    plt.plot(range(len(resnet_acc_list)), resnet_acc_list, label='resnet')
+
+    # vit_path = '/home/results_vuillod/models_05_03/transformer/'
+    # all_vit_cm = matrices_iterate(vit_path)
+    # vit_acc_list = compute_all_acc(all_vit_cm)
+    # plt.plot(range(len(vit_acc_list)), vit_acc_list, label='vit')
+    
+    plt.legend()
+    plt.xlabel('epoch')
+    plt.ylabel('accuracy (%)')
+    plt.savefig('accuracy_graph.png')
+    plt.close()
     
 
 if __name__ == '__main__':
