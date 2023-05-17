@@ -70,7 +70,7 @@ def matrices_iterate(path):
         yield(cm)
         i+=1
         cm_path = cm_str(path, i)
-    
+
 def cm_str(model_path, i):
     return model_path + 'confusion_matrix_' + str(i) + '.pt'
 
@@ -89,25 +89,26 @@ def path_to_plot(result_path, model_name, data_name):
     data_array = torch.load(result_path + model_name + data_name)
     data_array = crop_zeros(data_array)
     plt.plot(range(len(data_array)), data_array, label=model_name + data_name[:-3])
-    plt.legend()
     plt.xlabel('epoch')
     plt.ylabel(data_name[:-3])
-    
+    plt.title(result_path)
+    plt.legend()
+
 
 def main():
-    result_path = '/home/results_vuillod/models_05_16/'
-    model_name = 'vgg16_bn/'
-    path_to_plot(result_path, model_name, 'accuracies.pt')
-    plt.savefig('tmp_accuracies_graph.png')
+    result_path = '/home/results_vuillod/models_05_17/'
+    model_names = ['vgg16_bn/', 'vit_b_16/', 'resnet18/']
+    for model_name in model_names:
+        path_to_plot(result_path, model_name, 'accuracies.pt')
+        plt.savefig(result_path + model_name + 'accuracies_graph.png')
+        plt.close()
 
-    path_to_plot(result_path, model_name, 'test_losses.pt')
-    path_to_plot(result_path, model_name, 'train_losses.pt')
-    cm = matrix_from_path(cm_str(result_path + model_name, 14))
-    print(compute_acc(cm))
-    
-    plt.savefig('tmp_losses_graph.png')
-    plt.close()
-   
+        path_to_plot(result_path, model_name, 'test_losses.pt')
+        path_to_plot(result_path, model_name, 'train_losses.pt')
+        
+        plt.savefig(result_path + model_name + 'losses_graph.png')
+        plt.close()
+
 
 if __name__ == '__main__':
     main()

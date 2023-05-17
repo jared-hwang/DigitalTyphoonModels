@@ -10,29 +10,29 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sn
 
-from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
-
 def init_model(model_name):
-  if model_name == "alexnet":
-    model = alexnet(num_classes=8)
-    model.features[0]= nn.Conv2d(1,64,kernel_size=11,stride=4,padding=2)
-    return model
-  elif model_name == "vgg16_bn":
-    model = vgg16_bn(num_classes=8)
-    model.features[0]= nn.Conv2d(1,64,kernel_size=(3,3),stride=(1,1),padding=(1,1))
-    model.features[-1]=nn.AdaptiveMaxPool2d(7*7)
-    model.classifier[-1]=nn.Linear(in_features = 4096, out_features=8, bias = True)
-    return model
-  elif model_name == "resnet18":
-    model = resnet18(num_classes=7)
-    model.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-    model.fc = nn.Linear(in_features=512, out_features=8, bias=True)
-    return model  
-  elif model_name == "vit_b_16":
-    model = vit_b_16(num_classes=8)
-    patch_size = 16
-    model.conv_proj = nn.Conv2d(in_channels=1, out_channels=768, kernel_size=patch_size, stride=patch_size)
-    return model
+    if model_name == "alexnet":
+        model = alexnet(num_classes=8)
+        model.features[0]= nn.Conv2d(1,64,kernel_size=11,stride=4,padding=2)
+        return model
+    elif model_name == "vgg16_bn":
+        model = vgg16_bn(num_classes=8)
+        model.features[0]= nn.Conv2d(1,64,kernel_size=(3,3),stride=(1,1),padding=(1,1))
+        model.features[-1]=nn.AdaptiveMaxPool2d(7*7)
+        model.classifier[-1]=nn.Linear(in_features = 4096, out_features=8, bias = True)
+        return model
+    elif model_name == "resnet18":
+        model = resnet18(num_classes=7)
+        model.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+        model.fc = nn.Linear(in_features=512, out_features=8, bias=True)
+        return model  
+    elif model_name == "vit_b_16":
+        model = vit_b_16(num_classes=8)
+        patch_size = 16
+        model.conv_proj = nn.Conv2d(in_channels=1, out_channels=768, kernel_size=patch_size, stride=patch_size)
+        return model
+    else:
+        raise Exception("Model name unknown:" + model_name)
 
 
 def cm_compute(confusion_matrix, labels, predicted):
@@ -82,10 +82,12 @@ def train_and_test(dataset_obj, device,
     last_saved = -1
     #   model.load_state_dict(torch.load(result_path + model_name + '/' + 'net0.80_epoch%d.pth'%(last_i_saved) ))
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=momentum)
 
     result_path = result_path + model_name + '/'
-    if not os.path.exists(result_path):
+    if os.path.exists(result_path):
+        raise Exception('Warning, result folder already exist and may contain results')
+    else:
         os.makedirs(result_path)
 
     # Train the network
@@ -114,6 +116,7 @@ def train_and_test(dataset_obj, device,
     print(train_log_string)
     with open(str(result_path + f'log_{start_time_str}.txt'), 'w') as writer:
         writer.write(train_log_string)
+        writer.close()
 
     # Init save tensors
     train_losses = torch.zeros(n_epochs, dtype=float)
