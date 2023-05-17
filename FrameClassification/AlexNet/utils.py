@@ -77,28 +77,37 @@ def cm_str(model_path, i):
 def matrix_from_path(cm_path):
     return torch.load(cm_path)
 
-def main():
-    # vgg_path = '/home/results_vuillod/models_05_03/vgg/'
-    # all_vgg_cm = matrices_iterate(vgg_path)
-    # vgg_acc_list = compute_all_acc(all_vgg_cm)
-    # plt.plot(range(len(vgg_acc_list)), vgg_acc_list, label='vgg')
+def crop_zeros(arr):
+    """Find the index of the last non-zero element and crop the array"""
+    last_non_zero_index = len(arr) - 1
+    while last_non_zero_index >= 0 and arr[last_non_zero_index] == 0:
+        last_non_zero_index -= 1
+    return arr[:last_non_zero_index + 1]
 
-    resnet_path = '/home/results_vuillod/models_05_09/resnet18/'
-    all_resnet_cm = matrices_iterate(resnet_path)
-    resnet_acc_list = compute_all_acc(all_resnet_cm)
-    plt.plot(range(len(resnet_acc_list)), resnet_acc_list, label='resnet')
-
-    # vit_path = '/home/results_vuillod/models_05_03/transformer/'
-    # all_vit_cm = matrices_iterate(vit_path)
-    # vit_acc_list = compute_all_acc(all_vit_cm)
-    # plt.plot(range(len(vit_acc_list)), vit_acc_list, label='vit')
-    
+def path_to_plot(result_path, model_name, data_name):
+    """plot a graph from a data array"""
+    data_array = torch.load(result_path + model_name + data_name)
+    data_array = crop_zeros(data_array)
+    plt.plot(range(len(data_array)), data_array, label=model_name + data_name[:-3])
     plt.legend()
     plt.xlabel('epoch')
-    plt.ylabel('accuracy (%)')
-    plt.savefig('accuracy_graph.png')
-    plt.close()
+    plt.ylabel(data_name[:-3])
     
+
+def main():
+    result_path = '/home/results_vuillod/models_05_16/'
+    model_name = 'vgg16_bn/'
+    path_to_plot(result_path, model_name, 'accuracies.pt')
+    plt.savefig('tmp_accuracies_graph.png')
+
+    path_to_plot(result_path, model_name, 'test_losses.pt')
+    path_to_plot(result_path, model_name, 'train_losses.pt')
+    cm = matrix_from_path(cm_str(result_path + model_name, 14))
+    print(compute_acc(cm))
+    
+    plt.savefig('tmp_losses_graph.png')
+    plt.close()
+   
 
 if __name__ == '__main__':
     main()

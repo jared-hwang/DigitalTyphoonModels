@@ -19,9 +19,9 @@ def main():
     std = 34.3959
     learning_rate = 0.0001
     momentum = 0.9
-    result_path = "/home/results_vuillod/models_05_09/"
+    result_path = "/home/results_vuillod/models_05_17/"
     model_name='resnet18'
-    weights='DEFAULT'
+    weights=None
 
     # Import the database in a dataset_obj
     print('importing dataset...')
