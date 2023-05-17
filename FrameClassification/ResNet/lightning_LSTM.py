@@ -14,15 +14,13 @@ from PIL import Image
 import datetime
 from pathlib import Path
 from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
-from FrameDatamodule import TyphoonDataModule
+from SequenceDatamodule import TyphoonDataModule
 from logging_utils import Logger
 
 JSONlogger = Logger()
 start_time_str = str(datetime.datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
 
-
-class LightningResnet(pl.LightningModule):
-
+class LightningLSTM(pl.LightningModule):
     def __init__(self, learning_rate, weights, num_classes):
         super().__init__()
         self.save_hyperparameters()
@@ -32,9 +30,8 @@ class LightningResnet(pl.LightningModule):
         self.learning_rate = learning_rate
 
         # Define Model
-        self.resnet = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', weights=weights)
-        self.resnet.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-        self.resnet.fc = nn.Linear(in_features=512, out_features=7, bias=True)
+        self.lstm = nn.LSTM(input_size=downsample_size[0]*downsample_size[1], hidden_size=50, num_layers=1)
+        self.linear = nn.Linear(50, num_classes)
 
         # Loss functions and statistics
         self.criterion = nn.CrossEntropyLoss()
@@ -48,38 +45,52 @@ class LightningResnet(pl.LightningModule):
         self.predicted_labels = []
         self.truth_labels = []
 
+        self.max_sequence_length = 505
 
-    def forward(self, images):
-        # Add channel
-        images = torch.Tensor(images).float()
-        images = torch.reshape(images, [images.size()[0], 1, images.size()[1], images.size()[2]])
-        output = self.resnet(images)
-        return output
+    def forward(self, sequence):
+        # Add flatten
+        sequence = torch.reshape(sequence, (sequence.size()[1], sequence.size()[2], sequence.size()[3]))
+        sequence = torch.flatten(sequence, start_dim=1)
+        sequence = torch.reshape(sequence, (sequence.size()[0], 1, sequence.size()[1]))
+        
+        x, _ = self.lstm(sequence)
+        x = self.linear(x)
+
+        x = torch.reshape(x, (x.size()[0], x.size()[2]))
+        return x
 
     def training_step(self, train_batch, batch_idx):
-        images, labels = train_batch
-        labels = labels - 2
-        predictions = self.forward(images)
+        sequence, labels = train_batch
+        labels = torch.reshape(labels, [labels.size()[1]]).to(torch.int64) - 2
+        
+        predictions = self.forward(sequence)     
+        pad_length = self.max_sequence_length - labels.size()[0]
+        predictions = predictions[pad_length:]
         loss = self.cross_entropy_loss(predictions, labels)
+        
         self.log('train_loss', loss, on_step=False, on_epoch=True)
         return loss
 
     def validation_step(self, val_batch, batch_idx):
-        images, labels = val_batch
-        labels = labels - 2
-        predictions = self.forward(images)
+        sequence, labels = val_batch
+        labels = torch.reshape(labels, [labels.size()[1]]).to(torch.int64) - 2
+        
+        predictions = self.forward(sequence)      
+        pad_length = self.max_sequence_length - labels.size()[0]
+        predictions = predictions[pad_length:]
+
         loss = self.cross_entropy_loss(predictions, labels)
         self.log('val_loss', loss, on_step=False, on_epoch=True)
 
         self.predicted_labels.append(torch.argmax(predictions, 1))
-        self.truth_labels.append(labels.int())
+        self.truth_labels.append(labels)
 
         return loss
 
     def on_validation_epoch_end(self):
         all_preds = torch.concat(self.predicted_labels)
         all_truths = torch.concat(self.truth_labels)
-
+        
         micro_f1_result = self.compute_micro_f1(all_preds, all_truths)
         macro_f1_result = self.compute_macro_f1(all_preds, all_truths)
         weighted_f1_result = self.compute_weighted_f1(all_preds, all_truths)
@@ -100,7 +111,7 @@ class LightningResnet(pl.LightningModule):
 
         self.predicted_labels.clear()  # free memory
         self.truth_labels.clear()
-    
+     
     def cross_entropy_loss(self, predictions, labels):
         labels = torch.Tensor(labels).long()
         return self.criterion(predictions, labels)
@@ -137,10 +148,10 @@ class LightningResnet(pl.LightningModule):
 
 
 # Hyperparameters
-learning_rate     = 0.0001
-batch_size        = 16
-num_workers       = 16
-max_epochs        = 1
+learning_rate     = 0.1
+batch_size        = 1
+num_workers       = 4
+max_epochs        = 20
 weights           = None
 split_by          = 'sequence'
 load_data         = False
@@ -150,7 +161,7 @@ downsample_size   = (224, 224)
 num_classes       = 5
 accelerator       = 'gpu' if torch.cuda.is_available() else 'cpu'
 data_dir          = '/data/'
-log_dir           = "/DigitalTyphoonModels/FrameClassification/ResNet/lightning_logs/sequence_logs/"
+log_dir           = "/DigitalTyphoonModels/FrameClassification/ResNet/lightning_logs/LSTM_logs/"
 
 # Set up data
 data_module = TyphoonDataModule(data_dir,
@@ -164,11 +175,10 @@ data_module = TyphoonDataModule(data_dir,
 
 
 # Train
-model = LightningResnet(learning_rate=learning_rate, weights=weights, num_classes=num_classes)
+model = LightningLSTM(learning_rate=learning_rate, weights=weights, num_classes=num_classes)
 trainer = pl.Trainer(accelerator=accelerator, max_epochs=max_epochs, default_root_dir=log_dir)
 
 trainer.fit(model, data_module)
-
 
 # Log things to JSON
 version = trainer.logger.version
@@ -181,4 +191,4 @@ JSONlogger.log_json_and_txt_pairs('meta', [('start_time', start_time_str),
                                     ('downsample', downsample_size),
                                     ('weights', weights)])
 
-JSONlogger.write_json(str(Path(log_dir) / 'lightning_logs' / f'version_{version}' / f'resnet_json_{start_time_str}.json'))
+JSONlogger.write_json(str(Path(log_dir) / 'lightning_logs' / f'version_{version}' / f'LSTM_json_{start_time_str}.json'))
