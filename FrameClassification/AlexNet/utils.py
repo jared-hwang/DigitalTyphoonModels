@@ -70,35 +70,45 @@ def matrices_iterate(path):
         yield(cm)
         i+=1
         cm_path = cm_str(path, i)
-    
+
 def cm_str(model_path, i):
     return model_path + 'confusion_matrix_' + str(i) + '.pt'
 
 def matrix_from_path(cm_path):
     return torch.load(cm_path)
 
-def main():
-    # vgg_path = '/home/results_vuillod/models_05_03/vgg/'
-    # all_vgg_cm = matrices_iterate(vgg_path)
-    # vgg_acc_list = compute_all_acc(all_vgg_cm)
-    # plt.plot(range(len(vgg_acc_list)), vgg_acc_list, label='vgg')
+def crop_zeros(arr):
+    """Find the index of the last non-zero element and crop the array"""
+    last_non_zero_index = len(arr) - 1
+    while last_non_zero_index >= 0 and arr[last_non_zero_index] == 0:
+        last_non_zero_index -= 1
+    return arr[:last_non_zero_index + 1]
 
-    resnet_path = '/home/results_vuillod/models_05_09/resnet18/'
-    all_resnet_cm = matrices_iterate(resnet_path)
-    resnet_acc_list = compute_all_acc(all_resnet_cm)
-    plt.plot(range(len(resnet_acc_list)), resnet_acc_list, label='resnet')
-
-    # vit_path = '/home/results_vuillod/models_05_03/transformer/'
-    # all_vit_cm = matrices_iterate(vit_path)
-    # vit_acc_list = compute_all_acc(all_vit_cm)
-    # plt.plot(range(len(vit_acc_list)), vit_acc_list, label='vit')
-    
-    plt.legend()
+def path_to_plot(result_path, model_name, data_name):
+    """plot a graph from a data array"""
+    data_array = torch.load(result_path + model_name + data_name)
+    data_array = crop_zeros(data_array)
+    plt.plot(range(len(data_array)), data_array, label=model_name + data_name[:-3])
     plt.xlabel('epoch')
-    plt.ylabel('accuracy (%)')
-    plt.savefig('accuracy_graph.png')
-    plt.close()
-    
+    plt.ylabel(data_name[:-3])
+    plt.title(result_path)
+    plt.legend()
+
+
+def main():
+    result_path = '/home/results_vuillod/models_05_17/'
+    model_names = ['vgg16_bn/', 'vit_b_16/', 'resnet18/']
+    for model_name in model_names:
+        path_to_plot(result_path, model_name, 'accuracies.pt')
+        plt.savefig(result_path + model_name + 'accuracies_graph.png')
+        plt.close()
+
+        path_to_plot(result_path, model_name, 'test_losses.pt')
+        path_to_plot(result_path, model_name, 'train_losses.pt')
+        
+        plt.savefig(result_path + model_name + 'losses_graph.png')
+        plt.close()
+
 
 if __name__ == '__main__':
     main()
