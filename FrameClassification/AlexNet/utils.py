@@ -4,7 +4,6 @@ import torch
 import matplotlib.pyplot as plt
 import seaborn as sn
 import os
-from sklearn.metrics import precision_recall_fscore_support
 import numpy as np
 
 def compute_acc(cm):
@@ -71,24 +70,45 @@ def matrices_iterate(path):
         yield(cm)
         i+=1
         cm_path = cm_str(path, i)
-    
+
 def cm_str(model_path, i):
     return model_path + 'confusion_matrix_' + str(i) + '.pt'
 
 def matrix_from_path(cm_path):
     return torch.load(cm_path)
 
-def main():
-    resnet_path = '/home/results_vuillod/models_05_03/resnet/'
-    # resnet_acc_list = compute_all_acc(resnet_path + 'confusion_matrix_', 100)
-    # acc_graph(resnet_acc_list, resnet_path)
-    # all_resnet_cm = matrices_iterate('/home/results_vuillod/models_05_03/resnet/')
-    # generate_heatmaps(all_resnet_cm, '/home/results_vuillod/tmp/')
-    cm = matrix_from_path(cm_str(resnet_path, 99))
-    generate_table(cm)
+def crop_zeros(arr):
+    """Find the index of the last non-zero element and crop the array"""
+    last_non_zero_index = len(arr) - 1
+    while last_non_zero_index >= 0 and arr[last_non_zero_index] == 0:
+        last_non_zero_index -= 1
+    return arr[:last_non_zero_index + 1]
 
-    pass
-    
+def path_to_plot(result_path, model_name, data_name):
+    """plot a graph from a data array"""
+    data_array = torch.load(result_path + model_name + data_name)
+    data_array = crop_zeros(data_array)
+    plt.plot(range(len(data_array)), data_array, label=model_name + data_name[:-3])
+    plt.xlabel('epoch')
+    plt.ylabel(data_name[:-3])
+    plt.title(result_path)
+    plt.legend()
+
+
+def main():
+    result_path = '/home/results_vuillod/models_05_17/'
+    model_names = ['vgg16_bn/', 'vit_b_16/', 'resnet18/']
+    for model_name in model_names:
+        path_to_plot(result_path, model_name, 'accuracies.pt')
+        plt.savefig(result_path + model_name + 'accuracies_graph.png')
+        plt.close()
+
+        path_to_plot(result_path, model_name, 'test_losses.pt')
+        path_to_plot(result_path, model_name, 'train_losses.pt')
+        
+        plt.savefig(result_path + model_name + 'losses_graph.png')
+        plt.close()
+
 
 if __name__ == '__main__':
     main()

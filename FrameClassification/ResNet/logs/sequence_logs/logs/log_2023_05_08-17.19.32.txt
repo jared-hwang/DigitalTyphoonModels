@@ -1,0 +1,50 @@
+Start time: 2023_05_08-17.19.32 
+ Num/max epochs: 1 
+ Batch size: 16 
+Learning rate: 0.0001 
+ Split by: sequence 
+Autostop: False 
+Normalized: True
+Validation: 
+ 	 	 Avg Batch Loss: 2.6072825091971805 
+	 Accuracy: 25.96260205425336% 
+Micro F1: 0.2596260205425336 
+Macro F1: 0.08244542945554906 
+ Weighted F1: 0.10702489380732191
+[[9858    0    0    0    0]
+ [8814    0    0    0    0]
+ [5803    0    0    0    0]
+ [9752    0    0    0    0]
+ [3743    0    0    0    0]]
+Initial Val Loss: 2.6072825091971805 	 Initial Val Acc: 25.96260205425336
+
+ Epoch 1 
+ 	 loss: 1.0558445075167555 
+ 	 acc: 54.90475024647817
+Validation: 
+ 	 	 Avg Batch Loss: 0.9078683790601924 
+	 Accuracy: 59.997366341848824% 
+Micro F1: 0.5999736634184882 
+Macro F1: 0.5657038510860449 
+ Weighted F1: 0.5651094222823763
+[[8580  896  120   82  180]
+ [4917 2288  672  548  389]
+ [1367 1355 1015 1720  346]
+ [ 460  876  757 7602   57]
+ [ 309   98   39    1 3296]]
+	 Validation loss: 0.9078683790601924 
+ 	 Validation acc: 59.997366341848824
+Epoch Losses: [1.0558445075167555] 
+ Validation losses: [0.9078683790601924] 
+ Validation accuracies: [59.997366341848824]
+Validation: 
+ 	 	 Avg Batch Loss: 0.9078683790601924 
+	 Accuracy: 59.997366341848824% 
+Micro F1: 0.5999736634184882 
+Macro F1: 0.5657038510860449 
+ Weighted F1: 0.5651094222823763
+[[8580  896  120   82  180]
+ [4917 2288  672  548  389]
+ [1367 1355 1015 1720  346]
+ [ 460  876  757 7602   57]
+ [ 309   98   39    1 3296]]
