@@ -17,6 +17,7 @@ def testing(device,model,loss_fn,testloader,batch_size) :
                 input_images, input_labels = data
                 input_images, input_labels = torch.Tensor(input_images).float(), torch.Tensor(input_labels).long()
                 input_images = torch.reshape(input_images, [input_images.size()[0], 1, input_images.size()[1], input_images.size()[2]])
+                input_labels = torch.reshape(input_labels, input_labels.size()[0])
                 input_images, input_labels  = input_images.to(device), input_labels.to(device)
                 
                 # Compute prediction error

@@ -3,7 +3,7 @@ from testing import *
 import numpy as np
 import copy
 
-def training(device,model,loss_fn,optimizer,trainloader,testloader,batch_size,epochs):
+def training(device,model,loss_fn,optimizer,scheduler,trainloader,testloader,batch_size,epochs):
     t=1
     best_mse = np.inf
     best_weight = None
@@ -19,8 +19,10 @@ def training(device,model,loss_fn,optimizer,trainloader,testloader,batch_size,ep
                 
                 #get image and label
                 input_images, input_labels = data
+                grade,input_labels = input_labels[:,0],input_labels[:,1]
                 input_images, input_labels = torch.Tensor(input_images).float(), torch.Tensor(input_labels).float()
                 input_images = torch.reshape(input_images, [input_images.size()[0], 1, input_images.size()[1], input_images.size()[2]])
+                input_labels = torch.reshape(input_labels, [input_labels.size()[0],1])
                 input_images, input_labels  = input_images.to(device), input_labels.to(device)
                 
                 # Compute prediction error
@@ -35,17 +37,18 @@ def training(device,model,loss_fn,optimizer,trainloader,testloader,batch_size,ep
                 
                 #print mse in pbar every 100 batch
                 #if batch % 100 == 0 :
-                pbar.set_postfix({"mse":loss.item()})
+                pbar.set_postfix({"mse":loss.item()/batch_size})
                 
         
         print(f"    Training done !")
 
         #testing
-        mse = testing(device,model,loss_fn,testloader,batch_size)
+        mse, _ , _, _ = testing(device,model,loss_fn,testloader,batch_size)
         #saving best model
         history.append(mse)
         if mse < best_mse : best_mse, best_weight= mse, copy.deepcopy(model.state_dict())        
         
         t+=1
+        scheduler.step()
     print("Done!")
     return best_mse, best_weight ,history
