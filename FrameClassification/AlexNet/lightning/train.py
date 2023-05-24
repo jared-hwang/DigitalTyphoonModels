@@ -10,7 +10,30 @@ from datetime import datetime
 start_time_str = str(datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
 
 def main():
-    logger = TensorBoardLogger("tb_logs", name="resnet_v0")
+    logger = TensorBoardLogger(
+        save_dir="tb_logs",
+        name="resnet_v0",
+        default_hp_metric=False,
+    )
+
+    logger.log_hyperparams({
+        'start_time': start_time_str,
+        'LEARNING_RATE': config.LEARNING_RATE,
+        'BATCH_SIZE': config.BATCH_SIZE,
+        'NUM_WORKERS': config.NUM_WORKERS,
+        'MAX_EPOCHS': config.MAX_EPOCHS,
+        'WEIGHTS': config.WEIGHTS, 
+        'SPLIT_BY': config.SPLIT_BY, 
+        'LOAD_DATA': config.LOAD_DATA, 
+        'DATASET_SPLIT': config.DATASET_SPLIT, 
+        'STANDARDIZE_RANGE': config.STANDARDIZE_RANGE, 
+        'DOWNSAMPLE_SIZE': config.DOWNSAMPLE_SIZE, 
+        'NUM_CLASSES': config.NUM_CLASSES, 
+        'ACCELERATOR': config.ACCELERATOR, 
+        'DEVICES': config.DEVICES, 
+        'DATA_DIR': config.DATA_DIR, 
+        'LOG_DIR': config.LOG_DIR, 
+        })
 
     # Set up data
     data_module = TyphoonDataModule(
@@ -33,9 +56,8 @@ def main():
     trainer = pl.Trainer(
         logger=logger,
         accelerator=config.ACCELERATOR,
-        devices=[1],
+        devices=config.DEVICES,
         max_epochs=config.MAX_EPOCHS,
-        default_root_dir=config.LOG_DIR,
     )
 
     trainer.fit(model, data_module)

@@ -18,7 +18,7 @@ class TyphoonDataModule(pl.LightningDataModule):
         split_by="sequence",
         load_data=False,
         dataset_split=(0.8, 0.1, 0.1),
-        standardize_range=(150, 350),
+        standardize_range=(170, 300),
         downsample_size=(224, 224),
         corruption_ceiling_pct=100,
     ):
