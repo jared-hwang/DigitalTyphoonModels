@@ -31,7 +31,7 @@ class TyphoonDataModule(pl.LightningDataModule):
 
         data_path = Path(dataroot)
         self.images_path = str(data_path / "image") + "/"
-        self.track_path = str(data_path / "track") + "/"
+        self.track_path = str(data_path / "metadata") + "/"
         self.metadata_path = str(data_path / "metadata.json")
         self.load_data = load_data
         self.split_by = split_by
@@ -53,7 +53,7 @@ class TyphoonDataModule(pl.LightningDataModule):
             load_data_into_memory=self.load_data,
             filter_func=self.image_filter,
             transform_func=self.transform_func,
-            spectrum="infrared",
+            spectrum="Infrared",
             verbose=False,
         )
 

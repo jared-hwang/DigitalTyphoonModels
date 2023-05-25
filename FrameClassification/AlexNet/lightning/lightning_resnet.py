@@ -34,6 +34,7 @@ class LightningResnet(pl.LightningModule):
         )
         self.accuracy = Accuracy(task="multiclass", num_classes=num_classes)
         self.compute_cm = ConfusionMatrix(task="multiclass", num_classes=num_classes)
+        self.cm = torch.zeros(5,5)
 
         # Collected statistics
         self.predicted_labels = []
@@ -93,7 +94,7 @@ class LightningResnet(pl.LightningModule):
             on_epoch=True,
             sync_dist=True,
         )
-        # self.log_dict({'confusion_matrix': str(cm)})
+        self.logger.experiment.add_embedding(cm, tag=str(self.current_epoch))
 
         self.predicted_labels.clear()  # free memory
         self.truth_labels.clear()

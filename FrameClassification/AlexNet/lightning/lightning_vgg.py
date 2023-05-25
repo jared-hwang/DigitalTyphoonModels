@@ -92,7 +92,7 @@ class LightningVGG(pl.LightningModule):
             on_epoch=True,
             sync_dist=True,
         )
-        # self.log_dict({'confusion_matrix': str(cm)})
+        self.logger.experiment.add_embedding(cm, tag=str(self.current_epoch))
 
         self.predicted_labels.clear()  # free memory
         self.truth_labels.clear()
