@@ -1,12 +1,12 @@
 import torch.nn as nn
 import torch
 import torch.optim as optim
-from torchvision.models import resnet18
+from torchvision.models import vit_b_16
 import pytorch_lightning as pl
 from torchmetrics import F1Score, ConfusionMatrix, Accuracy
 
 
-class LightningResnet(pl.LightningModule):
+class LightningVit(pl.LightningModule):
     def __init__(self, learning_rate, weights, num_classes):
         super().__init__()
         self.save_hyperparameters('num_classes')
@@ -15,11 +15,8 @@ class LightningResnet(pl.LightningModule):
         self.learning_rate = learning_rate
 
         # Define Model
-        self.model = resnet18(weights=weights)
-        self.model.conv1 = nn.Conv2d(
-            1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False
-        )
-        self.model.fc = nn.Linear(in_features=512, out_features=num_classes, bias=True)
+        self.model = vit_b_16(num_classes=8)
+        self.model.conv_proj = nn.Conv2d(in_channels=1, out_channels=768, kernel_size=16, stride=16)
         
         #loss functions and statistics
         self.loss_fn = nn.CrossEntropyLoss()
@@ -34,7 +31,6 @@ class LightningResnet(pl.LightningModule):
         )
         self.accuracy = Accuracy(task="multiclass", num_classes=num_classes)
         self.compute_cm = ConfusionMatrix(task="multiclass", num_classes=num_classes)
-        self.cm = torch.zeros(5,5)
 
         # Collected statistics
         self.predicted_labels = []
