@@ -1,9 +1,13 @@
 from tqdm import tqdm
 from testing import *
+import numpy as np
+import copy
 
-def training(device,model,loss_fn,optimizer,trainloader,testloader,batch_size,epochs):
+def training(device,model,loss_fn,optimizer,scheduler,trainloader,testloader,batch_size,epochs):
     t=1
-    accuracy=0
+    best_mse = np.inf
+    best_weight = None
+    history = []
     
     while t <= epochs : 
         
@@ -15,29 +19,36 @@ def training(device,model,loss_fn,optimizer,trainloader,testloader,batch_size,ep
                 
                 #get image and label
                 input_images, input_labels = data
-                input_images, input_labels = torch.Tensor(input_images).float(), torch.Tensor(input_labels).long()
+                grade,input_labels = input_labels[:,0],input_labels[:,1]
+                input_images, input_labels = torch.Tensor(input_images).float(), torch.Tensor(input_labels).float()
                 input_images = torch.reshape(input_images, [input_images.size()[0], 1, input_images.size()[1], input_images.size()[2]])
+                input_labels = torch.reshape(input_labels, [input_labels.size()[0],1])
                 input_images, input_labels  = input_images.to(device), input_labels.to(device)
                 
                 # Compute prediction error
                 pred = model(input_images)
-                loss = loss_fn(pred, input_labels)
+                loss = loss_fn(pred, input_labels.float())
+                #print(f"loss  = {loss}")
                 
                 # Backpropagation
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
                 
-                #print loss in pbar every 100 batch
+                #print mse in pbar every 100 batch
                 #if batch % 100 == 0 :
-                loss= loss.item()
-                if batch_num % 10 == 0 : pbar.set_postfix({"loss":loss})
+                pbar.set_postfix({"mse":loss.item()/batch_size})
                 
         
         print(f"    Training done !")
 
         #testing
-        accuracy,cm,f1 = testing(device,model,loss_fn,testloader,batch_size)        
+        mse, _ , _, _ = testing(device,model,loss_fn,testloader,batch_size)
+        #saving best model
+        history.append(mse)
+        if mse < best_mse : best_mse, best_weight= mse, copy.deepcopy(model.state_dict())        
+        
         t+=1
+        scheduler.step()
     print("Done!")
-    return accuracy ,cm ,f1
+    return best_mse, best_weight ,history

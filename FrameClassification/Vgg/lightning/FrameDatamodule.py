@@ -2,7 +2,6 @@ import torch
 from torch import nn
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
-from torchvision.transforms.functional import center_crop
 
 from pathlib import Path
 import numpy as np
@@ -19,9 +18,8 @@ class TyphoonDataModule(pl.LightningDataModule):
         split_by="sequence",
         load_data=False,
         dataset_split=(0.8, 0.1, 0.1),
-        standardize_range=(170, 300),
+        standardize_range=(150, 350),
         downsample_size=(224, 224),
-        cropped=False,
         corruption_ceiling_pct=100,
     ):
         super().__init__()
@@ -31,7 +29,7 @@ class TyphoonDataModule(pl.LightningDataModule):
 
         data_path = Path(dataroot)
         self.images_path = str(data_path / "image") + "/"
-        self.track_path = str(data_path / "metadata") + "/"
+        self.track_path = str(data_path / "track") + "/"
         self.metadata_path = str(data_path / "metadata.json")
         self.load_data = load_data
         self.split_by = split_by
@@ -39,7 +37,6 @@ class TyphoonDataModule(pl.LightningDataModule):
         self.dataset_split = dataset_split
         self.standardize_range = standardize_range
         self.downsample_size = downsample_size
-        self.cropped = cropped
 
         self.corruption_ceiling_pct = corruption_ceiling_pct
 
@@ -53,7 +50,7 @@ class TyphoonDataModule(pl.LightningDataModule):
             load_data_into_memory=self.load_data,
             filter_func=self.image_filter,
             transform_func=self.transform_func,
-            spectrum="Infrared",
+            spectrum="infrared",
             verbose=False,
         )
 
@@ -84,29 +81,26 @@ class TyphoonDataModule(pl.LightningDataModule):
             and (100.0 <= image.long() <= 180.0)
         )  # and (image.mask_1_percent() <  self.corruption_ceiling_pct))
 
-    def transform_func(self, image_batch):
-        image_batch = np.clip(
-            image_batch, self.standardize_range[0], self.standardize_range[1]
+    def transform_func(self, image_ray):
+        image_ray = np.clip(
+            image_ray, self.standardize_range[0], self.standardize_range[1]
         )
-        image_batch = (image_batch - self.standardize_range[0]) / (
+        image_ray = (image_ray - self.standardize_range[0]) / (
             self.standardize_range[1] - self.standardize_range[0]
         )
         if self.downsample_size != (512, 512):
-            image_batch = torch.Tensor(image_batch)
-            if self.cropped:
-                image_batch = image_batch = center_crop(image_batch, (224, 224))
-            else:
-                image_batch = torch.reshape(
-                    image_batch, [1, 1, image_batch.size()[0], image_batch.size()[1]]
-                )
-                image_batch = nn.functional.interpolate(
-                    image_batch,
-                    size=self.downsample_size,
-                    mode="bilinear",
-                    align_corners=False,
-                )
-                image_batch = torch.reshape(
-                    image_batch, [image_batch.size()[2], image_batch.size()[3]]
-                )
-            image_batch = image_batch.numpy()
-        return image_batch
+            image_ray = torch.Tensor(image_ray)
+            image_ray = torch.reshape(
+                image_ray, [1, 1, image_ray.size()[0], image_ray.size()[1]]
+            )
+            image_ray = nn.functional.interpolate(
+                image_ray,
+                size=self.downsample_size,
+                mode="bilinear",
+                align_corners=False,
+            )
+            image_ray = torch.reshape(
+                image_ray, [image_ray.size()[2], image_ray.size()[3]]
+            )
+            image_ray = image_ray.numpy()
+        return image_ray
