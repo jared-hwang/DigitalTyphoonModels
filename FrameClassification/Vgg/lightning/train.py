@@ -82,24 +82,77 @@ def main():
 
 
 
-    train,test = loading.load(config.TYPE,dataset,batch_size,num_workers)
+    train_old,test_old = loading.load(0,dataset,batch_size,num_workers)
+    train_recent,test_recent = loading.load(1,dataset,batch_size,num_workers)
+    train_now,test_now = loading.load(2,dataset,batch_size,num_workers)
     
-    print(test)
     # Train
-    model = LightningVgg(
+    model_old = LightningVgg(
         learning_rate=config.LEARNING_RATE,
         weights=config.WEIGHTS,
         num_classes=config.NUM_CLASSES,
     )
-    trainer = pl.Trainer(
+    
+    model_recent = LightningVgg(
+        learning_rate=config.LEARNING_RATE,
+        weights=config.WEIGHTS,
+        num_classes=config.NUM_CLASSES,
+    )
+    
+    model_now = LightningVgg(
+        learning_rate=config.LEARNING_RATE,
+        weights=config.WEIGHTS,
+        num_classes=config.NUM_CLASSES,
+    )
+    
+    trainer_now = pl.Trainer(
         logger=logger,
         accelerator=config.ACCELERATOR,
-        devices=[0],
+        devices=config.DEVICE,
         max_epochs=config.MAX_EPOCHS,
         default_root_dir=config.LOG_DIR,
     )
 
-    trainer.fit(model, train, test)
+    trainer_recent = pl.Trainer(
+        logger=logger,
+        accelerator=config.ACCELERATOR,
+        devices=config.DEVICE,
+        max_epochs=config.MAX_EPOCHS,
+        default_root_dir=config.LOG_DIR,
+    )
+
+    trainer_old = pl.Trainer(
+        logger=logger,
+        accelerator=config.ACCELERATOR,
+        devices=config.DEVICE,
+        max_epochs=config.MAX_EPOCHS,
+        default_root_dir=config.LOG_DIR,
+    )
+    print("Training <2005")
+    trainer_old.fit(model_old, train_old, test_old)
+    print("Training >2005")
+    trainer_recent.fit(model_recent, train_recent, test_recent)
+    print("Training >2015")
+    trainer_now.fit(model_now, train_now, test_now)
+    
+    print("Test <2005 on :")
+    print(">2005")
+    trainer_old.test(dataloaders=test_recent)
+    print(">2015")
+    trainer_old.test(dataloaders=test_now)
+    
+    print("Test >2005 on :")
+    print("<2005")
+    trainer_recent.test(dataloaders=test_old)
+    print(">2015")
+    trainer_recent.test(dataloaders=test_now)
+    
+    print("Test >2015 on :")
+    print("<2005")
+    trainer_now.test(dataloaders=test_old)
+    print(">2005")
+    trainer_now.test(dataloaders=test_recent)
+    
 
 
 if __name__ == "__main__":
