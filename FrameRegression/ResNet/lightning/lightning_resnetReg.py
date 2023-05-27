@@ -98,9 +98,9 @@ class LightningResnetReg(pl.LightningModule):
             tensorboard = self.logger.experiment
             
             #print(self.predicted_labels)
-            for i in range(len(self.predicted_labels)):
-                for j in range(len(self.predicted_labels[i])):
-                    tensorboard.add_scalars(f"epoch_{self.current_epoch}",{'pred':self.predicted_labels[i][j],'truth':self.truth_labels[i][j]},self.truth_labels[i][j])
+            for i in range(len(self.all_pred)):
+                for j in range(len(self.all_truth[i])):
+                    tensorboard.add_scalars(f"epoch_{self.current_epoch}",{'pred':self.all_pred[i][j],'truth':self.all_truth[i][j]},self.all_truth[i][j])
         
         self.predicted_labels.clear()  # free memory
         self.truth_labels.clear()

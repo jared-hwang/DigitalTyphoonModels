@@ -4,7 +4,7 @@ import torch
 LEARNING_RATE     = 0.001
 BATCH_SIZE        = 16
 NUM_WORKERS       = 16
-MAX_EPOCHS        = 5
+MAX_EPOCHS        = 30
 
 
 # DATASET

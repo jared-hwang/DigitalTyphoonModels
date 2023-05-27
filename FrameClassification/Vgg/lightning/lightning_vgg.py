@@ -5,6 +5,12 @@ from torchvision.models import vgg16_bn
 import pytorch_lightning as pl
 from torchmetrics import F1Score, ConfusionMatrix, Accuracy
 import torchvision
+import seaborn as sn
+import matplotlib.pyplot as plt
+import pandas as pd
+import io
+from PIL import Image
+from torchvision import transforms
 
 
 class LightningVgg(pl.LightningModule):
@@ -107,6 +113,32 @@ class LightningVgg(pl.LightningModule):
         self.log('macro_f1', macro_f1_result)
         self.log('weighted_f1', weighted_f1_result)
         self.log('accuracy', accuracy)
+        self.log_confusion_matrix(all_preds, all_truths)
         
         self.predicted_labels.clear()  # free memory
         self.truth_labels.clear()
+        
+    def log_confusion_matrix(self, all_preds, all_truths):
+        # https://stackoverflow.com/questions/65498782/how-to-dump-confusion-matrix-using-tensorboard-logger-in-pytorch-lightning/73388839#73388839
+        tb = self.logger.experiment
+
+        cf_matrix = self.compute_cm(all_preds, all_truths)
+        computed_confusion = cf_matrix.detach().cpu().numpy().astype(int)
+
+        df_cm = pd.DataFrame(computed_confusion, index=[i + 2 for i in range(self.num_classes)],
+                        columns=[i + 2 for i in range(self.num_classes)])
+
+
+        fig, ax = plt.subplots(figsize=(10, 5))
+        fig.subplots_adjust(left=0.05, right=.65)
+        ax.set_title(f'Epoch: {self.current_epoch}'); 
+        sn.set(font_scale=1.2)
+        sn.heatmap(df_cm, annot=True, annot_kws={"size": 16}, fmt='d', ax=ax)
+        buf = io.BytesIO()
+
+        plt.savefig(buf, format='jpeg', bbox_inches='tight')
+        buf.seek(0)
+        im = Image.open(buf)
+        im = transforms.ToTensor()(im)
+        tb.add_image("val_confusion_matrix", im, global_step=self.current_epoch)
+        plt.close()
