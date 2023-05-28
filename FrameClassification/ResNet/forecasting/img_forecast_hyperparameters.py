@@ -11,7 +11,7 @@ split_by          = 'sequence'
 load_data         = False
 dataset_split     = (0.8, 0.2, 0.0)
 standardize_range = (170, 300)
-downsample_size   = (128, 128)
+downsample_size   = (64, 64)
 num_heads         = 24
 num_encoder_layers = 8
 num_decoder_layers = 8
@@ -26,10 +26,9 @@ log_dir           = "/DigitalTyphoonModels/FrameClassification/ResNet/lightning_
 
 max_pressure = 1020  # truly 1018
 min_pressure = 860   # truly 870
-# min_temp, max_temp = 170, 300
-min_temp, max_temp = 0, 0
+min_temp, max_temp = 170, 300
 
-num_tokens = 10*(max_pressure - min_pressure) + 5  # +5 to account for eos, sos, and pad
+# num_tokens = 10*(max_pressure - min_pressure) + 5  # +5 to account for eos, sos, and pad
 dim_model = 528
 max_sequence_length = 528
 

@@ -1,5 +1,7 @@
 import torch
 import numpy as np
+
+
 class PadSequence(object):
 
     def __init__(self, max_length, pad_token, sos_token, eos_token, label_range=(860, 1020), img_range=(170, 300)):
@@ -18,23 +20,24 @@ class PadSequence(object):
         if self.img_range == (0, 0):
             sample = torch.Tensor([])
         else:
-            sample = torch.from_numpy(sample)
-            
-
-        # sample = torch.from_numpy(sample)
-        # pad_length = self.max_length - sample.size()[0]
-        # pad = torch.zeros(pad_length, sample.size(1), sample.size(2))
-        # sample = torch.cat((pad, sample), dim=0)
-        # sample = torch.reshape(sample, [sample.size()[0], 1, sample.size()[1], sample.size()[2]])
+            sample = torch.Tensor(sample).long()
+            sample = self.map_img_to_rep(sample)
+            pad_length = self.max_length - sample.size()[0]
+            pad = torch.full(torch.Size([self.max_length - sample.size()[0], sample.size()[1]]), self.PAD_token)
+            sample = torch.cat((sample, pad), dim=0)            
 
         # Transform labels 
         labels = np.clip(labels, self.label_range[0], self.label_range[1]) 
         labels = self.map_label_to_rep(labels)
         labels = torch.Tensor(labels)
         
-        src = torch.cat((self.sos_token, labels, self.eos_token), dim=0)
-        tgt = torch.cat((self.sos_token, labels), dim=0)
-        tgt_expected = torch.cat((labels, self.eos_token), dim=0)
+        # src = torch.cat((self.sos_token, labels, self.eos_token), dim=0)
+        # tgt = torch.cat((self.sos_token, labels), dim=0)
+        # tgt_expected = torch.cat((labels, self.eos_token), dim=0)
+
+        src = torch.cat((self.sos_token, labels), dim=0)
+        tgt = src[:-1]
+        tgt_expected = src[1:]
 
         src_pad = torch.full(torch.Size([self.max_length - src.size()[0]]), self.PAD_token)
         src = torch.cat((src, src_pad), dim=0)
@@ -54,11 +57,11 @@ class PadSequence(object):
         # *10 to turn single dec float to int
         # + temp_range to include img in the mapping rep
         labels = labels * 10
-        labels = labels - (10*self.label_range[0]) + 5 + self.img_range[1]
+        labels = labels - (10*self.label_range[0]) + 5
         return labels
     
     def map_label_rep_to_label(self, label_rep):
-        labels = label_rep - 5 + (10*self.label_range[0]) - self.img_range[1]
+        labels = label_rep - 5 + (10*self.label_range[0])
         labels = labels / 10
         return labels
     
@@ -69,4 +72,4 @@ class PadSequence(object):
     def map_img_rep_to_label(self, img_rep):
         img = img - 5 + self.img_range[0]
         img = img / 10
-        return img
+        return img_forecast_hyperparameters

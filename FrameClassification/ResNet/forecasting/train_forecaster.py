@@ -3,7 +3,7 @@ from torchvision import transforms
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 
-from lightning_transformer_pressure_forecast import LightningTransformerLabelsOnly
+from lightning_transformer_pressure_forecast_crossentropy import LightningTransformerLabelsOnly
 from hyperparameters import *
 from PadLabels import PadSequence
 from SequenceDatamodule import TyphoonDataModule
@@ -42,7 +42,7 @@ model = LightningTransformerLabelsOnly(num_tokens,
                                        EOS_token=EOS_token,
                                        PAD_token=PAD_token)
 
-checkpoint_callback = ModelCheckpoint(monitor='total_validation_loss', mode='min', every_n_epochs=1, save_top_k=5)
+checkpoint_callback = ModelCheckpoint(monitor='total_validation_loss', mode='min', every_n_epochs=1, save_top_k=-1)
 trainer = pl.Trainer(accelerator=accelerator, max_epochs=max_epochs, default_root_dir=log_dir, callbacks=[checkpoint_callback])
 
 trainer.fit(model, data_module)
