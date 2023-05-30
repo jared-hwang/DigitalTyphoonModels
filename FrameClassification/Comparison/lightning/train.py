@@ -44,7 +44,8 @@ def main(hparam):
         'ACCELERATOR': config.ACCELERATOR, 
         'DEVICES': config.DEVICES, 
         'DATA_DIR': config.DATA_DIR, 
-        'LOG_DIR': config.LOG_DIR, 
+        'LOG_DIR': config.LOG_DIR,
+        'MODEL_NAME': hparam.model_name,
         })
 
     # Set up data
@@ -79,7 +80,7 @@ def main(hparam):
     checkpoint_callback = ModelCheckpoint(
         dirpath= logger.save_dir + '/' + logger.name + '/version_%d/checkpoints/' % logger.version,
         filename='model_{epoch}',
-        monitor='val_accuracy', 
+        monitor='val_loss', 
         verbose=True,
         every_n_epochs=1,
         save_top_k = 30
