@@ -56,7 +56,7 @@ class TyphoonDataModule(pl.LightningDataModule):
                                         load_data_into_memory=self.load_data,
                                         filter_func=self.image_filter,
                                         transform_func=self.transform_func,
-                                        spectrum='infrared',
+                                        spectrum='Infrared',
                                         verbose=False)
 
         self.train_set, self.val_set, _ = dataset.random_split(self.dataset_split, split_by=self.split_by)

@@ -25,6 +25,7 @@ class LightningVgg(pl.LightningModule):
         
         self.learning_rate = learning_rate
         self.loss_fn = nn.CrossEntropyLoss()
+        self.num_classes = num_classes
 
         self.compute_micro_f1 = F1Score(
             task="multiclass", num_classes=num_classes, average="micro"
@@ -40,6 +41,7 @@ class LightningVgg(pl.LightningModule):
         
         self.predicted_labels = []
         self.truth_labels = []
+        self.compt = 1
 
 
     def forward(self, images):
@@ -79,7 +81,10 @@ class LightningVgg(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         loss, outputs, labels = self._common_step(batch)
-        self.log("test_loss", loss, on_epoch=True, sync_dist=True)
+        self.log(f"test_loss_{self.compt}", loss, on_epoch=True, sync_dist=True)
+
+        self.predicted_labels.append(outputs)
+        self.truth_labels.append(labels.int())
         return loss
 
     def _common_step(self, batch):
@@ -118,7 +123,27 @@ class LightningVgg(pl.LightningModule):
         self.predicted_labels.clear()  # free memory
         self.truth_labels.clear()
         
-    def log_confusion_matrix(self, all_preds, all_truths):
+    def on_test_epoch_end(self):
+        all_preds = torch.concat(self.predicted_labels)
+        all_truths = torch.concat(self.truth_labels)
+
+        micro_f1_result = self.compute_micro_f1(all_preds, all_truths)
+        macro_f1_result = self.compute_macro_f1(all_preds, all_truths)
+        weighted_f1_result = self.compute_weighted_f1(all_preds, all_truths)
+        accuracy = self.accuracy(all_preds, all_truths)
+        name=f'test_confusion_matrix_{self.compt}'
+    
+        self.compt+=1
+        self.log('micro_f1', micro_f1_result)
+        self.log('macro_f1', macro_f1_result)
+        self.log('weighted_f1', weighted_f1_result)
+        self.log('accuracy', accuracy)
+        self.log_confusion_matrix(all_preds, all_truths, name)
+        
+        self.predicted_labels.clear()  # free memory
+        self.truth_labels.clear()
+        
+    def log_confusion_matrix(self, all_preds, all_truths, name="val_confusion_matrix"):
         # https://stackoverflow.com/questions/65498782/how-to-dump-confusion-matrix-using-tensorboard-logger-in-pytorch-lightning/73388839#73388839
         tb = self.logger.experiment
 
@@ -140,5 +165,5 @@ class LightningVgg(pl.LightningModule):
         buf.seek(0)
         im = Image.open(buf)
         im = transforms.ToTensor()(im)
-        tb.add_image("val_confusion_matrix", im, global_step=self.current_epoch)
+        tb.add_image(name , im, global_step=self.current_epoch)
         plt.close()

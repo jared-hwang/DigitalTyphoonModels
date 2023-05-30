@@ -52,7 +52,7 @@ class TyphoonDataModule(pl.LightningDataModule):
             load_data_into_memory=self.load_data,
             filter_func=self.image_filter,
             transform_func=self.transform_func,
-            spectrum="infrared",
+            spectrum="Infrared",
             verbose=False,
         )
 

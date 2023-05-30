@@ -2,7 +2,6 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 
 from FrameDatamodule import TyphoonDataModule
-from lightning_vgg import LightningVgg
 import config
 
 from datetime import datetime
@@ -68,7 +67,7 @@ dataset = DigitalTyphoonDataset(
             str(images_path),
             str(track_path),
             str(metadata_path),
-            "grade",
+            "pressure",
             load_data_into_memory='all_data',
             filter_func=image_filter,
             transform_func=transform_func,
@@ -135,27 +134,27 @@ for i in range(l):
     else:
         now_val.append(now_data[i])
 
-with open('save/old_train.txt','w') as file:
+with open('save/old_train.txt','w+') as file:
     for id in old_train:
         file.write(id+"\n")
 
-with open('save/old_val.txt','w') as file:
+with open('save/old_val.txt','w+') as file:
     for id in old_val :
         file.write(id+"\n")
 
-with open('save/recent_train.txt','w') as file:
+with open('save/recent_train.txt','w+') as file:
     for id in recent_train:
         file.write(id+"\n")
 
-with open('save/recent_val.txt','w') as file:
+with open('save/recent_val.txt','w+') as file:
     for id in recent_val:
         file.write(id+"\n")
 
-with open('save/now_train.txt','w') as file:
+with open('save/now_train.txt','w+') as file:
     for id in now_train:
         file.write(id+"\n")
 
-with open('save/now_val.txt','w') as file:
+with open('save/now_val.txt','w+') as file:
     for id in now_val:
         file.write(id+"\n")
 

@@ -15,7 +15,7 @@ DATASET_SPLIT     = (0.8, 0.1, 0.1)
 STANDARDIZE_RANGE = (170, 350)
 DOWNSAMPLE_SIZE   = (224, 224)
 NUM_CLASSES       = 5
-TYPE              = 2 #OLD = 0 / RECENT = 1 / NOW = 2
+TYPE              = 2 #OLD = 0 / RECENT = 1 / NOW = 2 / RECENT + NOW =3
 
 # Computation
 ACCELERATOR       = 'gpu' if torch.cuda.is_available() else 'cpu'

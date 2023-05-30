@@ -19,7 +19,7 @@ from datetime import datetime
 start_time_str = str(datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
 
 def main():
-    logger = TensorBoardLogger("tb_logs", name="vgg_now")
+    logger = TensorBoardLogger("tb_logs", name="vgg_double")
 
     # Set up data
     batch_size=config.BATCH_SIZE,
@@ -84,47 +84,17 @@ def main():
 
     train_old,test_old = loading.load(0,dataset,batch_size,num_workers)
     train_recent,test_recent = loading.load(1,dataset,batch_size,num_workers)
-    train_now,test_now = loading.load(2,dataset,batch_size,num_workers)
+    train_now,test_now = loading.load(2,dataset,batch_size,num_workers)    
+    train_double,test_double = loading.load(3,dataset,batch_size,num_workers)
     
     # Train
-    '''
-    model_old = LightningVgg(
+    model = LightningVgg(
         learning_rate=config.LEARNING_RATE,
         weights=config.WEIGHTS,
         num_classes=config.NUM_CLASSES,
     )
     
-    
-    model_recent = LightningVgg(
-        learning_rate=config.LEARNING_RATE,
-        weights=config.WEIGHTS,
-        num_classes=config.NUM_CLASSES,
-    )'''
-    
-    model_now = LightningVgg(
-        learning_rate=config.LEARNING_RATE,
-        weights=config.WEIGHTS,
-        num_classes=config.NUM_CLASSES,
-    )
-    
-    '''
-    trainer_old = pl.Trainer(
-        logger=logger,
-        accelerator=config.ACCELERATOR,
-        devices=config.DEVICE,
-        max_epochs=config.MAX_EPOCHS,
-        default_root_dir=config.LOG_DIR,
-    )
-    
-    trainer_recent = pl.Trainer(
-        logger=logger,
-        accelerator=config.ACCELERATOR,
-        devices=config.DEVICE,
-        max_epochs=config.MAX_EPOCHS,
-        default_root_dir=config.LOG_DIR,
-    )
-'''
-    trainer_now = pl.Trainer(
+    trainer = pl.Trainer(
         logger=logger,
         accelerator=config.ACCELERATOR,
         devices=config.DEVICE,
@@ -140,25 +110,11 @@ def main():
     trainer_recent.fit(model_recent, train_recent, test_recent)
     '''
     print("Training >2015")    
-    trainer_now.fit(model_now, train_now, test_now)
-    '''
-    print("Test <2005 on :")
-    print(">2005")
-    trainer_old.test(dataloaders=test_recent)
-    print(">2015")
-    trainer_old.test(dataloaders=test_now)
+    trainer.fit(model, train_now, test_now)
     
-    print("Test >2005 on :")
+    print("Test on :")
     print("<2005")
-    trainer_recent.test(dataloaders=test_old)
-    print(">2015")
-    trainer_recent.test(dataloaders=test_now)
-    '''
-    print("Test >2015 on :")
-    print("<2005")
-    trainer_now.test(dataloaders=test_old)
-    print(">2005")
-    trainer_now.test(dataloaders=test_recent)
+    trainer.test(model,dataloaders=test_old)
     
 
 

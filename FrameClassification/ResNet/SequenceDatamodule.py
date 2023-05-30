@@ -62,7 +62,7 @@ class TyphoonDataModule(pl.LightningDataModule):
                                         transform=transforms.Compose([
                                             PadSequence(505),
                                         ]),
-                                        spectrum='infrared',
+                                        spectrum='Infrared',
                                         verbose=False)
 
         self.train_set, self.val_set, _ = dataset.random_split(self.dataset_split, split_by=self.split_by)

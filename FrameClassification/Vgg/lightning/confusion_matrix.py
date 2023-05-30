@@ -18,8 +18,11 @@ from datetime import datetime
 
 start_time_str = str(datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
 
+
 def main():
-    logger = TensorBoardLogger("tb_logs", name="vgg_now")
+    
+    logger1 = TensorBoardLogger("tb_logs", name="vgg_cf_old")
+    logger2 = TensorBoardLogger("tb_logs", name="vgg_cf_recent")
 
     # Set up data
     batch_size=config.BATCH_SIZE,
@@ -86,81 +89,32 @@ def main():
     train_recent,test_recent = loading.load(1,dataset,batch_size,num_workers)
     train_now,test_now = loading.load(2,dataset,batch_size,num_workers)
     
-    # Train
-    '''
-    model_old = LightningVgg(
-        learning_rate=config.LEARNING_RATE,
-        weights=config.WEIGHTS,
-        num_classes=config.NUM_CLASSES,
-    )
     
+    model_old = LightningVgg.load_from_checkpoint("tb_logs/vgg_trueold/version_0/checkpoints/epoch=29-step=159360.ckpt")
+    model_recent = LightningVgg.load_from_checkpoint("tb_logs/vgg_old/version_1/checkpoints/epoch=29-step=63360.ckpt")
     
-    model_recent = LightningVgg(
-        learning_rate=config.LEARNING_RATE,
-        weights=config.WEIGHTS,
-        num_classes=config.NUM_CLASSES,
-    )'''
-    
-    model_now = LightningVgg(
-        learning_rate=config.LEARNING_RATE,
-        weights=config.WEIGHTS,
-        num_classes=config.NUM_CLASSES,
-    )
-    
-    '''
-    trainer_old = pl.Trainer(
-        logger=logger,
+    trainer_old= pl.Trainer(
+        logger=logger1,
         accelerator=config.ACCELERATOR,
         devices=config.DEVICE,
         max_epochs=config.MAX_EPOCHS,
         default_root_dir=config.LOG_DIR,
     )
     
-    trainer_recent = pl.Trainer(
-        logger=logger,
+    trainer_recent= pl.Trainer(
+        logger=logger2,
         accelerator=config.ACCELERATOR,
         devices=config.DEVICE,
         max_epochs=config.MAX_EPOCHS,
         default_root_dir=config.LOG_DIR,
     )
-'''
-    trainer_now = pl.Trainer(
-        logger=logger,
-        accelerator=config.ACCELERATOR,
-        devices=config.DEVICE,
-        max_epochs=config.MAX_EPOCHS,
-        default_root_dir=config.LOG_DIR,
-    )
-    '''
-    print("Training <2005")
-    trainer_old.fit(model_old, train_old, test_old)
     
+    trainer_old.test(model_old, test_recent)
+    trainer_old.test(model_old, test_now)
     
-    print("Training >2005")
-    trainer_recent.fit(model_recent, train_recent, test_recent)
-    '''
-    print("Training >2015")    
-    trainer_now.fit(model_now, train_now, test_now)
-    '''
-    print("Test <2005 on :")
-    print(">2005")
-    trainer_old.test(dataloaders=test_recent)
-    print(">2015")
-    trainer_old.test(dataloaders=test_now)
+    trainer_recent.test(model_recent ,test_old)
+    trainer_recent.test(model_recent ,test_now)
     
-    print("Test >2005 on :")
-    print("<2005")
-    trainer_recent.test(dataloaders=test_old)
-    print(">2015")
-    trainer_recent.test(dataloaders=test_now)
-    '''
-    print("Test >2015 on :")
-    print("<2005")
-    trainer_now.test(dataloaders=test_old)
-    print(">2005")
-    trainer_now.test(dataloaders=test_recent)
-    
-
 
 if __name__ == "__main__":
     main()
