@@ -94,7 +94,7 @@ class TyphoonDataModule(pl.LightningDataModule):
         if self.downsample_size != (512, 512):
             image_batch = torch.Tensor(image_batch)
             if self.cropped:
-                image_batch = image_batch = center_crop(image_batch, (224, 224))
+                image_batch = center_crop(image_batch, (224, 224))
             else:
                 image_batch = torch.reshape(
                     image_batch, [1, 1, image_batch.size()[0], image_batch.size()[1]]
