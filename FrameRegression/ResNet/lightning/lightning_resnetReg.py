@@ -21,7 +21,7 @@ class LightningResnetReg(pl.LightningModule):
         self.learning_rate = learning_rate
         self.loss_fn = nn.MSELoss()
         self.accuracy = MeanSquaredError(squared = False)
-        
+        self.compt = 1
         self.predicted_labels = []
         self.truth_labels = []
 
@@ -65,6 +65,8 @@ class LightningResnetReg(pl.LightningModule):
         loss, outputs, labels = self._common_step(batch)
         self.log("test_loss", loss,
             on_step=False, on_epoch=True, sync_dist=True)
+        self.predicted_labels.append(outputs)
+        self.truth_labels.append(labels.float())
         return loss
 
     def _common_step(self, batch):
@@ -92,15 +94,27 @@ class LightningResnetReg(pl.LightningModule):
         accuracy = self.accuracy(all_preds, all_truths)
         self.log('validation_RMSE', accuracy,
             on_step=False, on_epoch=True, sync_dist=True)
-        
         #print regression line graph every 5 epochs
         if(self.current_epoch %5 == 0 ):
             tensorboard = self.logger.experiment
             
             #print(self.predicted_labels)
-            for i in range(len(self.all_pred)):
-                for j in range(len(self.all_truth[i])):
-                    tensorboard.add_scalars(f"epoch_{self.current_epoch}",{'pred':self.all_pred[i][j],'truth':self.all_truth[i][j]},self.all_truth[i][j])
+            for i in range(len(all_preds)):
+                tensorboard.add_scalars(f"epoch_{self.current_epoch}",{'pred':all_preds[i],'truth':all_truths[i]},all_truths[i])
         
         self.predicted_labels.clear()  # free memory
         self.truth_labels.clear()
+        
+    def on_test_epoch_end(self):
+        all_preds = torch.concat(self.predicted_labels)
+        all_truths = torch.concat(self.truth_labels)
+        accuracy = self.accuracy(all_preds, all_truths)
+        self.log(f'test_{self.compt}_RMSE', accuracy,
+            on_step=False, on_epoch=True, sync_dist=True)
+        tensorboard = self.logger.experiment
+        for i in range(len(all_preds)):
+            tensorboard.add_scalars(f"test_{self.compt}",{'pred':all_preds[i],'truth':all_truths[i]},all_truths[i])
+        
+        self.predicted_labels.clear()  # free memory
+        self.truth_labels.clear()
+        self.compt +=1

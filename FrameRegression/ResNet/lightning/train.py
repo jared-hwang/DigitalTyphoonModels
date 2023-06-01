@@ -10,7 +10,7 @@ from datetime import datetime
 start_time_str = str(datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
 
 def main():
-    logger = TensorBoardLogger("tb_logs", name=f"resnet_{config.LABELS}")
+    logger = TensorBoardLogger("tb_logs", name=f"resnet_{config.LABELS}_v2")
 
     # Set up data
     data_module = TyphoonDataModule(
