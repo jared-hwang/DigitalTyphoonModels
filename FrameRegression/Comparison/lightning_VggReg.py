@@ -1,20 +1,19 @@
 import torch.nn as nn
 import torch
 import torch.optim as optim
-from torchvision.models import resnet50
+from torchvision.models import vgg16_bn
 import pytorch_lightning as pl
 
 
-class LightningResnetReg(pl.LightningModule):
+class LightningVggReg(pl.LightningModule):
     def __init__(self, learning_rate, weights, num_classes):
         super().__init__()
         self.save_hyperparameters()
 
-        self.model = resnet50(num_classes=1, weights=weights)
-        self.model.conv1 = nn.Conv2d(
-            1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False
-        )
-        self.model.fc = nn.Linear(in_features=2048, out_features=1, bias=True)
+        self.model = vgg16_bn(num_classes=1, weights=weights)
+        self.model.features[0]= nn.Conv2d(1,64,kernel_size=(3,3),stride=(1,1),padding=(1,1))
+        self.model.features[-1]=nn.AdaptiveMaxPool2d(7*7)
+        self.model.classifier[-1]=nn.Linear(in_features = 4096, out_features=1, bias = True)
         
         self.learning_rate = learning_rate
         self.loss_fn = nn.MSELoss()

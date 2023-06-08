@@ -58,6 +58,7 @@ def main(hparam):
         dataset_split=config.DATASET_SPLIT,
         standardize_range=config.STANDARDIZE_RANGE,
         downsample_size=size,
+        cropped=hparam.cropped
     )
 
     # Train
