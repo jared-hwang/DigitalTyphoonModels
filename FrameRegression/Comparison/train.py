@@ -5,6 +5,7 @@ from FrameDatamodule import TyphoonDataModule
 from lightning_resnetReg import LightningResnetReg
 from lightning_VggReg import LightningVggReg
 from pytorch_lightning.callbacks import ModelCheckpoint
+
 import config
 from argparse import ArgumentParser
 
@@ -13,11 +14,6 @@ from datetime import datetime
 start_time_str = str(datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
 
 def main(hparam):
-    if hparam.device == None:
-        hparam.device = config.DEVICES
-    else:
-        hparam.device = [int(hparam.device)]
-
     if hparam.size == None:
         size = config.DOWNSAMPLE_SIZE
         hparam.size = str(config.DOWNSAMPLE_SIZE[0])
@@ -26,7 +22,7 @@ def main(hparam):
     elif hparam.size == '224':
         size = (224, 224)
     
-    logger_name = "resnet50_" + hparam.size
+    logger_name = "resnet50_" + str(size[0])
     if hparam.labels == "pressure": logger_name += "_pressure"
     if hparam.cropped: logger_name += "_cropped"
 
@@ -68,7 +64,7 @@ def main(hparam):
         load_data=config.LOAD_DATA,
         dataset_split=config.DATASET_SPLIT,
         standardize_range=config.STANDARDIZE_RANGE,
-        downsample_size=config.DOWNSAMPLE_SIZE,
+        downsample_size=size,
         cropped=hparam.cropped
     )
 
@@ -115,5 +111,10 @@ if __name__ == "__main__":
     parser.add_argument("--device")
     parser.add_argument("--labels", default=config.LABELS)
     args = parser.parse_args()
+
+    if args.device == None:
+        args.device = config.DEVICES
+    else:
+        args.device = [int(args.device)]
 
     main(args)

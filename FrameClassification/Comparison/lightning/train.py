@@ -3,9 +3,10 @@ from pytorch_lightning.loggers import TensorBoardLogger
 
 from FrameDatamodule import TyphoonDataModule
 from lightning_resnet import LightningResnet
-from pytorch_lightning.callbacks import ModelCheckpoint
 from lightning_vgg import LightningVGG
 from lightning_vit import LightningVit
+from pytorch_lightning.callbacks import ModelCheckpoint
+
 import config
 from argparse import ArgumentParser
 
@@ -13,19 +14,22 @@ from datetime import datetime
 
 start_time_str = str(datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
 
-def main(hparam):
+def main(hparam):    
+    logger_name = hparam.model_name + "_" + hparam.size
+    if hparam.cropped: logger_name += "_cropped"
+
+    if args.size == None:
+        size = config.DOWNSAMPLE_SIZE
+    elif args.size == '512':
+        size = (512,512)
+    elif args.size == '224':
+        size = (224, 224)
+
     logger = TensorBoardLogger(
         save_dir="tb_logs",
-        name="all_models",
+        name= logger_name,
         default_hp_metric=False,
     )
-
-    if hparam.size == None:
-        size = config.DOWNSAMPLE_SIZE
-    elif hparam.size == '512':
-        size = (512,512)
-    elif hparam.size == '224':
-        size = (224, 224)
 
     logger.log_hyperparams({
         'start_time': start_time_str,
@@ -34,6 +38,7 @@ def main(hparam):
         'NUM_WORKERS': config.NUM_WORKERS,
         'MAX_EPOCHS': config.MAX_EPOCHS,
         'WEIGHTS': config.WEIGHTS, 
+        'LABEL' : "wind",
         'SPLIT_BY': config.SPLIT_BY, 
         'LOAD_DATA': config.LOAD_DATA, 
         'DATASET_SPLIT': config.DATASET_SPLIT, 
@@ -42,7 +47,7 @@ def main(hparam):
         'CROPPED': hparam.cropped,
         'NUM_CLASSES': config.NUM_CLASSES, 
         'ACCELERATOR': config.ACCELERATOR, 
-        'DEVICES': config.DEVICES, 
+        'DEVICES': hparam.device, 
         'DATA_DIR': config.DATA_DIR, 
         'LOG_DIR': config.LOG_DIR,
         'MODEL_NAME': hparam.model_name,
@@ -84,13 +89,13 @@ def main(hparam):
         monitor='val_loss', 
         verbose=True,
         every_n_epochs=1,
-        save_top_k = 30
+        save_top_k = 5
         )
 
     trainer = pl.Trainer(
         logger=logger,
         accelerator=config.ACCELERATOR,
-        devices=config.DEVICES,
+        devices=hparam.device,
         max_epochs=config.MAX_EPOCHS,
         default_root_dir=config.LOG_DIR,
         callbacks=[checkpoint_callback]
@@ -106,6 +111,35 @@ if __name__ == "__main__":
     parser.add_argument("--model_name", default='vgg')
     parser.add_argument("--size")
     parser.add_argument("--cropped", default=False)
+    parser.add_argument("--device")
     args = parser.parse_args()
 
-    main(args)
+    if args.device == None:
+        args.device = config.DEVICES
+    else:
+        args.device = [int(args.device)]
+
+    # Pipeline for multiple training
+    print("Warning, some arguments are overwritten by a Python script in train.py")
+    for _ in range(5):
+        args.model_name = "vgg"
+        args.size = "512"
+        args.cropped = False
+        main(args)
+
+        args.size = "224"
+        main(args)
+
+        args.size = "224"
+        args.cropped = True
+        main(args)
+    
+        # args.model_name = "vit"
+        # args.cropped = False
+        # args.size = "224"
+        # main(args)
+
+        # args.size = "224"
+        # args.cropped = True
+        # main(args)
+    
