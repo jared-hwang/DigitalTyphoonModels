@@ -7,6 +7,7 @@ from torchmetrics import F1Score, ConfusionMatrix, Accuracy, MeanSquaredError
 import torchvision
 
 
+
 class LightningResnetReg(pl.LightningModule):
     def __init__(self, learning_rate, weights, num_classes):
         super().__init__()
@@ -89,32 +90,64 @@ class LightningResnetReg(pl.LightningModule):
         return optim.SGD(self.parameters(), lr=self.learning_rate)
     
     def on_validation_epoch_end(self):
+        
+        tensorboard = self.logger.experiment
         all_preds = torch.concat(self.predicted_labels)
         all_truths = torch.concat(self.truth_labels)
-        accuracy = self.accuracy(all_preds, all_truths)
-        self.log('validation_RMSE', accuracy,
-            on_step=False, on_epoch=True, sync_dist=True)
-        #print regression line graph every 5 epochs
-        if(self.current_epoch %5 == 0 ):
-            tensorboard = self.logger.experiment
-            
-            #print(self.predicted_labels)
-            for i in range(len(all_preds)):
-                tensorboard.add_scalars(f"epoch_{self.current_epoch}",{'pred':all_preds[i],'truth':all_truths[i]},all_truths[i])
+        all_couple = torch.cat((all_truths, all_preds), dim=1)
+        wind_values = torch.unique(all_truths)
+        pred_means = []
+        pred_std = []
+        pred_n = []
+        for value in wind_values:
+            # find all the couple (truth, preds) where truth == value and compute the mean of all the prediction for this value
+            m = torch.mean((all_couple[torch.where(all_couple[:,0] == value)][:,1].float()))
+            std = torch.std((all_couple[torch.where(all_couple[:,0] == value)][:,1].float()))
+            n = len(all_couple[torch.where(all_couple[:,0] == value)][:,1].float())
+            pred_means.append(m)
+            pred_std.append(std)
+            pred_n.append(n)
+
+        # Log regression line graph every 5 epochs
+        if(self.current_epoch %5 == 0 ):            
+            for i in range(len(wind_values)):
+                tensorboard.add_scalars(f"epoch_{self.current_epoch}",{'pred_mean':pred_means[i],'truth':wind_values[i]},wind_values[i])
+                tensorboard.add_scalars(f"epoch_{self.current_epoch}_stats",{'pred_std':pred_std[i],'pred_n':pred_n[i]},wind_values[i])
         
+        
+        self.log("validation_RMSE", self.accuracy(all_preds,all_truths),
+            on_step=False, on_epoch=True, sync_dist=True)
         self.predicted_labels.clear()  # free memory
         self.truth_labels.clear()
         
     def on_test_epoch_end(self):
+        tensorboard= self.logger.experiment
+        
         all_preds = torch.concat(self.predicted_labels)
         all_truths = torch.concat(self.truth_labels)
-        accuracy = self.accuracy(all_preds, all_truths)
-        self.log(f'test_{self.compt}_RMSE', accuracy,
-            on_step=False, on_epoch=True, sync_dist=True)
-        tensorboard = self.logger.experiment
-        for i in range(len(all_preds)):
-            tensorboard.add_scalars(f"test_{self.compt}",{'pred':all_preds[i],'truth':all_truths[i]},all_truths[i])
+        all_couple = torch.cat((all_truths, all_preds), dim=1)
+        wind_values = torch.unique(all_truths)
+        pred_means = []
+        pred_std = []
+        pred_n = []
+        for value in wind_values:
+            # find all the couple (truth, preds) where truth == value and compute the mean of all the prediction for this value
+            m = torch.mean((all_couple[torch.where(all_couple[:,0] == value)][:,1].float()))
+            std = torch.std((all_couple[torch.where(all_couple[:,0] == value)][:,1].float()))
+            n = len(all_couple[torch.where(all_couple[:,0] == value)][:,1].float())
+            pred_means.append(m)
+            pred_std.append(std)
+            pred_n.append(n)
+
+        # Log regression line graph every 5 epochs
+        if(self.current_epoch %5 == 0 ):            
+            for i in range(len(wind_values)):
+                tensorboard.add_scalars(f"test_{self.compt}",{'pred_mean':pred_means[i],'truth':wind_values[i]},wind_values[i])
+                tensorboard.add_scalars(f"test_{self.compt}_stats",{'pred_std':pred_std[i],'pred_n':pred_n[i]},wind_values[i])
         
+        Accuracy = self.accuracy(all_preds,all_truths)
+        self.log(f"test_{self.compt}_RMSE", Accuracy,
+            on_step=False, on_epoch=True, sync_dist=True)
         self.predicted_labels.clear()  # free memory
         self.truth_labels.clear()
         self.compt +=1

@@ -15,24 +15,21 @@ import numpy as np
 from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
 
 from datetime import datetime
+from split_testing import main as testing
 
 start_time_str = str(datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
 
 def main():
-    logger_old = TensorBoardLogger("tb_logs", name="resnet_train_old")
-    logger_recent = TensorBoardLogger("tb_logs", name="resnet_train_recent")
-    logger_now = TensorBoardLogger("tb_logs", name="resnet_train_now")
+    logger_old = TensorBoardLogger("tb_logs", name="resnet_train_old_same")
+    logger_recent = TensorBoardLogger("tb_logs", name="resnet_train_recent_same")
+    logger_now = TensorBoardLogger("tb_logs", name="resnet_train_now_same")
 
     # Set up data
-    batch_size=config.BATCH_SIZE,
-    num_workers=config.NUM_WORKERS,
-    standardize_range=config.STANDARDIZE_RANGE,
-    downsample_size=config.DOWNSAMPLE_SIZE,
-
-    batch_size=batch_size[0]
-    num_workers=num_workers[0]
-    standardize_range=standardize_range[0]
-    downsample_size=downsample_size[0]
+    batch_size=config.BATCH_SIZE
+    num_workers=config.NUM_WORKERS
+    standardize_range=config.STANDARDIZE_RANGE
+    downsample_size=config.DOWNSAMPLE_SIZE
+    type_save = config.TYPE_SAVE
 
     data_path = Path("/app/datasets/wnp/")
     images_path = str(data_path / "image") + "/"
@@ -84,10 +81,10 @@ def main():
 
 
 
-    train_old,test_old = loading.load(0,dataset,batch_size,num_workers)
-    train_recent,test_recent = loading.load(1,dataset,batch_size,num_workers)
-    train_now,test_now = loading.load(2,dataset,batch_size,num_workers)
-    
+    train_old,test_old = loading.load(0,dataset,batch_size,num_workers,type_save)
+    train_recent,test_recent = loading.load(1,dataset,batch_size,num_workers,type_save)
+    train_now,test_now = loading.load(2,dataset,batch_size,num_workers,type_save)
+
     # Train
     
     model_old = LightningResnetReg(
@@ -143,7 +140,6 @@ def main():
     print("Training >2015")    
     trainer_now.fit(model_now, train_now, test_now)
     
-
 
 if __name__ == "__main__":
     main()

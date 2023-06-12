@@ -25,7 +25,7 @@ load_data=config.LOAD_DATA,
 dataset_split=config.DATASET_SPLIT,
 standardize_range=config.STANDARDIZE_RANGE,
 downsample_size=config.DOWNSAMPLE_SIZE,
-
+type_save=config.TYPE_SAVE
 
 data_path = Path("/app/datasets/wnp/")
 images_path = str(data_path / "image") + "/"
@@ -81,6 +81,7 @@ old=[]
 recent=[]
 now=[]
 
+#splitting years in 3 buckets
 for i in years :
     if i < 2005 :
         old.append(i)
@@ -95,6 +96,7 @@ old_data=[]
 recent_data=[]
 now_data=[]
 
+#getting the ids from years
 for year in old :
     old_data.extend(dataset.get_seq_ids_from_year(year))     
       
@@ -104,12 +106,11 @@ for year in recent :
 for year in now :
     now_data.extend(dataset.get_seq_ids_from_year(year))       
 
-#TODO : split each and saves the id with dataset.get_sequence_ids
-
 old_train , old_val = [],[]
 recent_train , recent_val = [],[]
 now_train , now_val = [],[]
 
+#shuffling and splitting 80/20
 random.shuffle(old_data)
 l=len(old_data)
 for i in range(l):
@@ -125,7 +126,7 @@ for i in range(l):
         recent_train.append(recent_data[i])
     else:
         recent_val.append(recent_data[i])
-        
+          
 random.shuffle(now_data)
 l=len(now_data)
 for i in range(l):
@@ -134,28 +135,50 @@ for i in range(l):
     else:
         now_val.append(now_data[i])
 
-with open('save/old_train.txt','w+') as file:
-    for id in old_train:
-        file.write(id+"\n")
 
-with open('save/old_val.txt','w+') as file:
-    for id in old_val :
-        file.write(id+"\n")
+#writting in file depending on which format
+if(type_save=="standard"):
+    with open('save/old_train.txt','w+') as file:
+        for id in old_train:
+            file.write(id+"\n")
 
-with open('save/recent_train.txt','w+') as file:
-    for id in recent_train:
-        file.write(id+"\n")
+    with open('save/old_val.txt','w+') as file:
+        for id in old_val :
+            file.write(id+"\n")
 
-with open('save/recent_val.txt','w+') as file:
-    for id in recent_val:
-        file.write(id+"\n")
+    with open('save/recent_train.txt','w+') as file:
+        for id in recent_train:
+            file.write(id+"\n")
 
-with open('save/now_train.txt','w+') as file:
-    for id in now_train:
-        file.write(id+"\n")
+    with open('save/recent_val.txt','w+') as file:
+        for id in recent_val:
+            file.write(id+"\n")
 
-with open('save/now_val.txt','w+') as file:
-    for id in now_val:
-        file.write(id+"\n")
+    with open('save/now_train.txt','w+') as file:
+        for id in now_train:
+            file.write(id+"\n")
 
+    with open('save/now_val.txt','w+') as file:
+        for id in now_val:
+            file.write(id+"\n")
+
+if(type_save=="same_size"):
+    with(
+        open('save_same/old_train.txt','w+') as train1,
+        open('save_same/old_val.txt','w+') as test1,
+        open('save_same/recent_train.txt','w+') as train2,
+        open('save_same/recent_val.txt','w+') as test2,
+        open('save_same/now_train.txt','w+') as train3,
+        open('save_same/now_val.txt','w+') as test3,
+    ):
+        for i in range(min(len(old_train),len(recent_train),len(now_train))):
+            train1.write(old_train[i]+'\n')
+            train2.write(recent_train[i]+'\n')
+            train3.write(now_train[i]+'\n')
+        for i in range(min(len(old_val),len(recent_val),len(now_val))):            
+            test1.write(old_val[i]+'\n')
+            test2.write(recent_val[i]+'\n')
+            test3.write(now_val[i]+'\n')
+
+            
 

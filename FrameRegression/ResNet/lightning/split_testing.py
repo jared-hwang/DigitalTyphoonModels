@@ -19,20 +19,16 @@ from datetime import datetime
 start_time_str = str(datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
 
 def main():
-    logger_old = TensorBoardLogger("tb_logs", name="resnet_test_old")
-    logger_recent = TensorBoardLogger("tb_logs", name="resnet_test_recent")
-    logger_now = TensorBoardLogger("tb_logs", name="resnet_test_now")
+    logger_old = TensorBoardLogger("tb_logs", name="resnet_test_old_same")
+    logger_recent = TensorBoardLogger("tb_logs", name="resnet_test_recent_same")
+    logger_now = TensorBoardLogger("tb_logs", name="resnet_test_now_same")
 
     # Set up data
-    batch_size=config.BATCH_SIZE,
-    num_workers=config.NUM_WORKERS,
-    standardize_range=config.STANDARDIZE_RANGE,
-    downsample_size=config.DOWNSAMPLE_SIZE,
-
-    batch_size=batch_size[0]
-    num_workers=num_workers[0]
-    standardize_range=standardize_range[0]
-    downsample_size=downsample_size[0]
+    batch_size=config.BATCH_SIZE
+    num_workers=config.NUM_WORKERS
+    standardize_range=config.STANDARDIZE_RANGE
+    downsample_size=config.DOWNSAMPLE_SIZE    
+    type_save = config.TYPE_SAVE
 
     data_path = Path("/app/datasets/wnp/")
     images_path = str(data_path / "image") + "/"
@@ -83,16 +79,11 @@ def main():
             )
 
 
-    train_old,test_old = loading.load(0,dataset,batch_size,num_workers)
-    train_recent,test_recent = loading.load(1,dataset,batch_size,num_workers)
-    train_now,test_now = loading.load(2,dataset,batch_size,num_workers)
+    _,test_old = loading.load(0,dataset,batch_size,num_workers,type_save)
+    _,test_recent = loading.load(1,dataset,batch_size,num_workers,type_save)
+    _,test_now = loading.load(2,dataset,batch_size,num_workers,type_save)
     
     # Test
-    
-    model_old = LightningResnetReg.load_from_checkpoint("tb_logs/resnet_train_old/version_0/checkpoints/epoch=75-step=396036.ckpt")
-    model_recent = LightningResnetReg.load_from_checkpoint("tb_logs/resnet_train_recent/version_0/checkpoints/epoch=75-step=169404.ckpt")
-    model_now = LightningResnetReg.load_from_checkpoint("tb_logs/resnet_train_now/version_0/checkpoints/epoch=75-step=150024.ckpt")
-    
     
     trainer_old = pl.Trainer(
         logger=logger_old,
@@ -118,7 +109,15 @@ def main():
         default_root_dir=config.LOG_DIR,
     )
     
+    i=0
+
+    model_old = LightningResnetReg.load_from_checkpoint(f"tb_logs/resnet_train_old_same/version_{i}/checkpoints/epoch=100-step=167155.ckpt")
+    model_recent = LightningResnetReg.load_from_checkpoint(f"tb_logs/resnet_train_recent_same/version_{i}/checkpoints/epoch=100-step=196546.ckpt")
+    model_now = LightningResnetReg.load_from_checkpoint(f"tb_logs/resnet_train_now_same/version_{i}/checkpoints/epoch=100-step=203515.ckpt")
+    
     print("Testing <2005")
+    print("         on <2005 : ")
+    trainer_old.test(model_old, test_old)
     print("         on >2005 : ")
     trainer_old.test(model_old, test_recent)
     print("         on >2015 : ")
@@ -126,7 +125,9 @@ def main():
     
     print("Testing >2005")
     print("         on <2005 : ")
-    trainer_recent.test(model_recent, test_old)
+    trainer_recent.test(model_recent, test_old)    
+    print("         on >2005 : ")
+    trainer_recent.test(model_recent, test_recent)
     print("         on >2015 : ")
     trainer_recent.test(model_recent, test_now)
     
@@ -135,7 +136,10 @@ def main():
     trainer_now.test(model_now, test_old)
     print("         on >2005 : ")
     trainer_now.test(model_now, test_recent)
-
+    print("         on >2015 : ")
+    trainer_now.test(model_now, test_now)
+    print(f"Run {i} done")
+    
 
 if __name__ == "__main__":
     main()

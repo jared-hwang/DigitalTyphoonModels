@@ -20,32 +20,36 @@ import random
 
 
 
-def load(type,dataset,batch_size,num_workers):
+def load(type,dataset,batch_size,num_workers,type_save='standard'):
     train, test = [],[]
+    if (type_save=='standard') :
+        file_dir = 'save/'
+    if (type_save=='same_size') :
+        file_dir = 'save_same/'
     
     if type==0 :
-        with open('save/old_train.txt','r') as file:
+        with open(file_dir + 'old_train.txt','r') as file:
             train_id=[line for line in file]
-        with open('save/old_val.txt','r') as file:
+        with open(file_dir + 'old_val.txt','r') as file:
             test_id =[line for line in file]
     if type==1 :
-        with open('save/recent_train.txt','r') as file:
+        with open(file_dir + 'recent_train.txt','r') as file:
             train_id=[line for line in file]
-        with open('save/recent_val.txt','r') as file:
+        with open(file_dir + 'recent_val.txt','r') as file:
             test_id =[line for line in file]
     if type==2 :
-        with open('save/now_train.txt','r') as file:
+        with open(file_dir + 'now_train.txt','r') as file:
             train_id=[line for line in file]
-        with open('save/now_val.txt','r') as file:
+        with open(file_dir + 'now_val.txt','r') as file:
             test_id =[line for line in file]
     if type==3 :        
-        with open('save/now_train.txt','r') as file:
+        with open(file_dir + 'now_train.txt','r') as file:
             train_id1=[line for line in file]
-        with open('save/now_val.txt','r') as file:
+        with open(file_dir + 'now_val.txt','r') as file:
             test_id1 =[line for line in file]            
-        with open('save/recent_train.txt','r') as file:
+        with open(file_dir + 'recent_train.txt','r') as file:
             train_id2=[line for line in file]
-        with open('save/recent_val.txt','r') as file:
+        with open(file_dir + 'recent_val.txt','r') as file:
             test_id2 =[line for line in file]
         train_id = train_id1 +train_id2
         test_id = test_id1+ test_id2

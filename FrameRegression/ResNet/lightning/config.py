@@ -16,6 +16,7 @@ DATASET_SPLIT     = (0.8, 0.1, 0.1)
 STANDARDIZE_RANGE = (170, 350)
 DOWNSAMPLE_SIZE   = (224, 224)
 NUM_CLASSES       = 1
+TYPE_SAVE         = 'same_size' #'standard' or 'same_size'
 
 # Computation
 ACCELERATOR       = 'gpu' if torch.cuda.is_available() else 'cpu'

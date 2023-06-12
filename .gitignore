@@ -7,3 +7,5 @@
 *__pycache__
 *tb_logs
 save
+save_same
+*.txt
