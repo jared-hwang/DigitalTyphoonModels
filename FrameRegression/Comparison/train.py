@@ -10,24 +10,53 @@ import config
 from argparse import ArgumentParser
 
 from datetime import datetime
+import torch
 
 start_time_str = str(datetime.now().strftime("%Y_%m_%d-%H.%M.%S"))
 
-def main(hparam):
-    if hparam.size == None:
-        size = config.DOWNSAMPLE_SIZE
-        hparam.size = str(config.DOWNSAMPLE_SIZE[0])
-    elif hparam.size == '512':
-        size = (512,512)
-    elif hparam.size == '224':
-        size = (224, 224)
+def parse_args(args):
+    args_parsing = ""
+    if args.model_name not in ["resnet18", "resnet50", "vgg"]:
+        args_parsing += "Please give model_name among resnet18, 50 or vgg\n"
+    if args.size not in ["512", "224", 512, 224]:
+        args_parsing += "Please give size equals to 512 or 224\n"
+    if args.cropped not in ["False", "True", False, True]:
+        args_parsing += "Please give cropped equals to False or True\n"
+    if int(args.device) not in range(torch.cuda.device_count()):
+        args_parsing += "Please give a device number in the range (0, %d)\n" %torch.cuda.device_count()
+    if args.labels not in ["wind", "pressure"]:
+        args_parsing += "Please give size equals to wind or pressure\n"
+
+    if args_parsing != "": 
+        print(args_parsing)
+        raise ValueError("Some arguments are not initialized correctly")
     
-    logger_name = "resnet50_" + str(size[0])
-    if hparam.labels == "pressure": logger_name += "_pressure"
+
+    if args.size == '512' or args.size == 512:
+        args.size = (512,512)
+    elif args.size == '224'  or args.size == 224:
+        args.size = (224, 224)
+    
+    if args.cropped == "False": args.cropped = False
+    if args.cropped == "True": args.cropped = True
+
+    if args.device == None:
+        args.device = config.DEVICES
+    else:
+        args.device = [int(args.device)]
+
+    return args
+
+def train(hparam):
+    
+    hparam = parse_args(hparam)
+
+    logger_name = hparam.labels + "_" + hparam.model_name + "_" + str(hparam.size[0])
     if hparam.cropped: logger_name += "_cropped"
+    else : logger_name += "_no-crop"
 
     logger = TensorBoardLogger(
-        save_dir="tb_logs",
+        save_dir="tb_logs2",
         name= logger_name,
         default_hp_metric=False,
     )
@@ -44,7 +73,7 @@ def main(hparam):
         'LOAD_DATA': config.LOAD_DATA, 
         'DATASET_SPLIT': config.DATASET_SPLIT, 
         'STANDARDIZE_RANGE': config.STANDARDIZE_RANGE, 
-        'DOWNSAMPLE_SIZE': size, 
+        'DOWNSAMPLE_SIZE': hparam.size, 
         'CROPPED': hparam.cropped,
         'NUM_CLASSES': config.NUM_CLASSES, 
         'ACCELERATOR': config.ACCELERATOR, 
@@ -64,21 +93,24 @@ def main(hparam):
         load_data=config.LOAD_DATA,
         dataset_split=config.DATASET_SPLIT,
         standardize_range=config.STANDARDIZE_RANGE,
-        downsample_size=size,
+        downsample_size=hparam.size,
         cropped=hparam.cropped
     )
 
     # Train
-    resnet = LightningResnetReg(
-        learning_rate=config.LEARNING_RATE,
-        weights=config.WEIGHTS,
-        num_classes=config.NUM_CLASSES,
-    )
-    vgg = LightningVggReg(
-        learning_rate=config.LEARNING_RATE,
-        weights=config.WEIGHTS,
-        num_classes=config.NUM_CLASSES,
-    )
+    if hparam.model_name[:6] == "resnet":
+        resnet = LightningResnetReg(
+            learning_rate=config.LEARNING_RATE,
+            weights=config.WEIGHTS,
+            num_classes=config.NUM_CLASSES,
+            model_name = hparam.model_name
+        )
+    else:
+        vgg = LightningVggReg(
+            learning_rate=config.LEARNING_RATE,
+            weights=config.WEIGHTS,
+            num_classes=config.NUM_CLASSES,
+        )
 
     checkpoint_callback = ModelCheckpoint(
         dirpath= logger.save_dir + '/' + logger.name + '/version_%d/checkpoints/' % logger.version,
@@ -100,7 +132,9 @@ def main(hparam):
 
 
     if hparam.model_name=="vgg": trainer.fit(vgg, data_module)
-    if hparam.model_name=="resnet": trainer.fit(resnet, data_module)
+    if hparam.model_name[:6] =="resnet": trainer.fit(resnet, data_module)
+    
+    return "training finished"
 
 
 if __name__ == "__main__":
@@ -112,9 +146,4 @@ if __name__ == "__main__":
     parser.add_argument("--labels", default=config.LABELS)
     args = parser.parse_args()
 
-    if args.device == None:
-        args.device = config.DEVICES
-    else:
-        args.device = [int(args.device)]
-
-    main(args)
+    print(train(args))

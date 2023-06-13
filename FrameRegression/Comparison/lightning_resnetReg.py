@@ -1,21 +1,28 @@
 import torch.nn as nn
 import torch
 import torch.optim as optim
-from torchvision.models import resnet50
+from torchvision.models import resnet18, resnet50, resnet152
 import pytorch_lightning as pl
 
 
 class LightningResnetReg(pl.LightningModule):
-    def __init__(self, learning_rate, weights, num_classes):
+    def __init__(self, learning_rate, weights, num_classes, model_name):
         super().__init__()
         self.save_hyperparameters()
 
-        self.model = resnet50(num_classes=1, weights=weights)
-        self.model.conv1 = nn.Conv2d(
-            1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False
-        )
-        self.model.fc = nn.Linear(in_features=2048, out_features=1, bias=True)
-        
+        if model_name == "resnet18" : 
+            self.model = resnet18(weights=weights, num_classes=num_classes)
+            self.model.fc = nn.Linear(in_features=512, out_features=1, bias=True)
+            self.model.conv1 = nn.Conv2d(
+                1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False
+            )
+        if model_name == "resnet50" : 
+            self.model = resnet50(weights=weights, num_classes=num_classes)
+            self.model.fc = nn.Linear(in_features=2048, out_features=1, bias=True)
+            self.model.conv1 = nn.Conv2d(
+                1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False
+            )
+
         self.learning_rate = learning_rate
         self.loss_fn = nn.MSELoss()
         
@@ -50,7 +57,7 @@ class LightningResnetReg(pl.LightningModule):
         all_preds = torch.concat(self.predicted_labels)
         all_truths = torch.concat(self.truth_labels)
         all_couple = torch.cat((all_truths, all_preds), dim=1)
-        self.logger.experiment.add_embedding(all_couple, tag="couple_label_pred_ep" + str(self.current_epoch) + ".tsv")
+        self.logger.experiment.add_embedding(all_couple, tag="couple_label_pred_ep" + str(self.current_epoch))
         
         wind_values = torch.unique(all_truths)
         pred_means = []
@@ -65,12 +72,6 @@ class LightningResnetReg(pl.LightningModule):
             pred_std.append(std)
             pred_n.append(n)
 
-        # Log regression line graph every 5 epochs
-        if(self.current_epoch %5 == 0 ):            
-            for i in range(len(wind_values)):
-                tensorboard.add_scalars(f"epoch_{self.current_epoch}",{'pred_mean':pred_means[i],'truth':wind_values[i]},wind_values[i])
-                tensorboard.add_scalars(f"epoch_{self.current_epoch}_stats",{'pred_std':pred_std[i],'pred_n':pred_n[i]},wind_values[i])
-        
         train_loss = torch.mean(torch.tensor(self.all_train_loss))
         train_loss = torch.sqrt(torch.tensor(train_loss))
 
