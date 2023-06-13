@@ -101,7 +101,7 @@ def main(hparam):
         callbacks=[checkpoint_callback]
     )
 
-    if hparam.model_name=='resnet': trainer.fit(resnet, data_module)
+    if hparam.model_name[:6]=='resnet': trainer.fit(resnet, data_module)
     if hparam.model_name=='vgg':trainer.fit(vgg, data_module)
     if hparam.model_name=='vit':trainer.fit(vit, data_module)
 
@@ -118,28 +118,6 @@ if __name__ == "__main__":
         args.device = config.DEVICES
     else:
         args.device = [int(args.device)]
-
-    # Pipeline for multiple training
-    print("Warning, some arguments are overwritten by a Python script in train.py")
-    for _ in range(5):
-        args.model_name = "vgg"
-        args.size = "512"
-        args.cropped = False
-        main(args)
-
-        args.size = "224"
-        main(args)
-
-        args.size = "224"
-        args.cropped = True
-        main(args)
     
-        # args.model_name = "vit"
-        # args.cropped = False
-        # args.size = "224"
-        # main(args)
+    main(args)
 
-        # args.size = "224"
-        # args.cropped = True
-        # main(args)
-    
